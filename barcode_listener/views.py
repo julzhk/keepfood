@@ -29,6 +29,7 @@ def UPC_lookup(upc):
             'upcnumber': upc,
             'error': True
         }
+
     return product_data
 
 

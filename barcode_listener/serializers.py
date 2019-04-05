@@ -9,7 +9,7 @@ UPC_KEY = os.environ.get('UPC_KEY', '??')  # https://upcdatabase.org/
 UPCDATABASE_URL_PATTERN = "https://api.upcdatabase.org/product/%s/%s"
 UPC_LOOKUP_ERROR = 'upc number error'
 
-from .models import Product
+from .models import Product, Stock
 
 
 def UPC_lookup(upc):
@@ -43,6 +43,11 @@ class ProductSerializer(serializers.HyperlinkedModelSerializer):
 
     def create(self, validated_data):
         upcnumber = validated_data.get('upcnumber')
-        data = UPC_lookup(upcnumber)
-        validated_data = clean_up_keys(data)
-        return super(ProductSerializer, self).create(validated_data)
+        if Product.objects.exists(upcnumber=upcnumber):
+            data = UPC_lookup(upcnumber)
+            validated_data = clean_up_keys(data)
+            product = super(ProductSerializer, self).create(validated_data)
+        else:
+            product = Product.objects.get(upcnumber=upcnumber)
+        s = Stock.objects.create(product=product)
+        return product

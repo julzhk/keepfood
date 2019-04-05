@@ -1,6 +1,7 @@
 from django.db import models
 from django.utils import timezone
 
+
 class Product(models.Model):
     age = models.CharField(max_length=128, blank=True)
     alias = models.CharField(max_length=128, blank=True)
@@ -33,3 +34,22 @@ class Product(models.Model):
         if not self.id:
             self.created_at = timezone.now()
         return super(Product, self).save(*args, **kwargs)
+
+
+class Stock(models.Model):
+    product = models.ForeignKey('Product', on_delete=models.CASCADE)
+    date_use_by = models.DateTimeField(blank=True)
+    quantity_remaining = models.IntegerField(default=100)
+    created_at = models.DateTimeField(blank=True)
+    modified_at = models.DateTimeField(blank=True)
+
+    class Meta:
+        ordering = ['-modified_at', '-created_at']
+
+    def save(self, *args, **kwargs):
+        """ auto date stamp """
+        self.modified_at = timezone.now()
+        if not self.id:
+            self.created_at = timezone.now()
+            self.quantity_remaining = 100
+        return super(Stock, self).save(*args ** kwargs)
