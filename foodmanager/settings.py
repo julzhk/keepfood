@@ -20,6 +20,8 @@ ALLOWED_HOSTS = [os.environ.get('ALLOWED_HOST', '*')]
 
 
 INSTALLED_APPS = [
+
+    'rest_framework.authtoken',
     'rest_framework',
     'barcode_listener',
     'django_extensions',
@@ -74,13 +76,10 @@ DATABASES = {
 }
 
 REST_FRAMEWORK = {
-    # Use Django's standard `django.contrib.auth` permissions,
-    # or allow read-only access for unauthenticated users.
-    'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.DjangoModelPermissionsOrAnonReadOnly'
-    ]
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.TokenAuthentication',
+    ],
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/2.2/ref/settings/#auth-password-validators

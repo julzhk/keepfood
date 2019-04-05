@@ -1,8 +1,10 @@
-from django.shortcuts import render, HttpResponse
-from django.contrib.auth.models import User, Group
+from django.shortcuts import HttpResponse
 from rest_framework import viewsets
-from .serializers import ProductSerializer
+from rest_framework.permissions import IsAuthenticated
+
 from .models import Product
+from .serializers import ProductSerializer
+
 
 class ProductViewSet(viewsets.ModelViewSet):
     """
@@ -10,7 +12,7 @@ class ProductViewSet(viewsets.ModelViewSet):
     """
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
-
+    permission_classes = (IsAuthenticated,)
 
 def listener(request):
     return HttpResponse('boom')
