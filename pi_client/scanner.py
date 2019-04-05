@@ -1,11 +1,9 @@
 #!/usr/bin/python
 import json
 import os
-import pprint
 
 import requests
 
-UPC_KEY = os.environ.get('UPC_KEY', '??')  # https://upcdatabase.org/
 KEEPFOOD_KEY = os.environ.get('KEEPFOOD_KEY', '??')
 KEEPFOOD_URL = os.environ.get('KEEPFOOD_URL', '??')
 UPC_LOOKUP_ERROR = 'upc number error'
@@ -21,9 +19,7 @@ add UPC_KEY as env variable:
 
 open new shell and execute with:
  * sudo -E python3 scanner.py
-
-(-E means preserve env variables)
-
+ * (-E means preserve env variables)
 
 Inspired by https://www.piddlerintheroot.com/barcode-scanner/
 
@@ -43,7 +39,6 @@ CHARMAP_UPPERCASE = {4: 'A', 5: 'B', 6: 'C', 7: 'D', 8: 'E', 9: 'F', 10: 'G', 11
                      53: '~', 54: '<', 55: '>', 56: '?'}
 CR_CHAR = 40
 SHIFT_CHAR = 2
-UPCDATABASE_URL_PATTERN = "https://api.upcdatabase.org/product/%s/%s"
 
 
 def barcode_reader():
@@ -69,26 +64,10 @@ def barcode_reader():
                     CHARMAP = CHARMAP_LOWERCASE
 
 
-def UPC_lookup(upc):
-    ''' uses UPC's V3 API '''
-    url = UPCDATABASE_URL_PATTERN % (upc, (UPC_KEY))
-    response = requests.request("GET", url, headers={'cache-control': "no-cache", })
-    product_data = response.json()
-    print("-" * 8)
-    pprint.pprint(product_data)
-    print("-" * 8)
-    if product_data.get('error'):
-        product_data = {
-            'upcnumber': upc,
-            'error': True
-        }
-    return product_data
-
-
-def post_data_to_server(data):
+def post_data_to_server(upcnumber):
     response = requests.request(
         'POST', KEEPFOOD_URL,
-        data=json.dumps(data),
+        data=json.dumps({'upcnumber': upcnumber}),
         headers={
             'content-type': 'application/json',
             'Authorization': 'Token %s' % KEEPFOOD_KEY
@@ -99,9 +78,8 @@ def post_data_to_server(data):
 if __name__ == '__main__':
     try:
         while True:
-            ss = barcode_reader()
-            print(ss)
-            data = UPC_lookup(ss)
-            post_data_to_server(data)
+            upcnumber = barcode_reader()
+            print(upcnumber)
+            post_data_to_server(upcnumber)
     except KeyboardInterrupt:
         pass
