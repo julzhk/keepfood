@@ -1,10 +1,14 @@
 #!/usr/bin/python
 import json
 import os
+import pprint
 
 import requests
 
 UPC_KEY = os.environ.get('UPC_KEY', '??')  # https://upcdatabase.org/
+KEEPFOOD_KEY = os.environ.get('KEEPFOOD_KEY', '??')
+KEEPFOOD_URL = os.environ.get('KEEPFOOD_URL', '??')
+UPC_LOOKUP_ERROR = 'upc number error'
 
 """
 Run this on the raspberry pi with the USB barcode scanner attached
@@ -69,12 +73,27 @@ def UPC_lookup(upc):
     ''' uses UPC's V3 API '''
     url = UPCDATABASE_URL_PATTERN % (upc, (UPC_KEY))
     response = requests.request("GET", url, headers={'cache-control': "no-cache", })
-    product_data = json.dumps(response.json(), indent=2)
+    product_data = response.json()
     print("-" * 8)
-    print(upc)
-    print(product_data)
+    pprint.pprint(product_data)
     print("-" * 8)
+    if product_data.get('error'):
+        product_data = {
+            'upcnumber': upc,
+            'error': True
+        }
     return product_data
+
+
+def post_data_to_server(data):
+    response = requests.request(
+        'POST', KEEPFOOD_URL,
+        data=json.dumps(data),
+        headers={
+            'content-type': 'application/json',
+            'Authorization': 'Token %s' % KEEPFOOD_KEY
+        }
+    )
 
 
 if __name__ == '__main__':
@@ -82,6 +101,7 @@ if __name__ == '__main__':
         while True:
             ss = barcode_reader()
             print(ss)
-            UPC_lookup(upc=ss)
+            data = UPC_lookup(ss)
+            post_data_to_server(data)
     except KeyboardInterrupt:
         pass
