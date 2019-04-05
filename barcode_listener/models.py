@@ -1,3 +1,6 @@
+from datetime import timedelta
+
+from django.conf import settings
 from django.db import models
 from django.utils import timezone
 
@@ -52,4 +55,5 @@ class Stock(models.Model):
         if not self.id:
             self.created_at = timezone.now()
             self.quantity_remaining = 100
-        return super(Stock, self).save(*args ** kwargs)
+            self.date_use_by = timezone.now() + timedelta(days=settings.DEFAULT_DAYS_USE_BY)
+        return super(Stock, self).save(*args, **kwargs)

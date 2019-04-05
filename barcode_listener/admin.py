@@ -28,7 +28,5 @@ class StockAdmin(admin.ModelAdmin):
         'date_use_by',
         'quantity_remaining',
         'created_at',
-        'modified_at',
     )
-    list_filter = ('product', 'date_use_by', 'created_at', 'modified_at')
     date_hierarchy = 'created_at'

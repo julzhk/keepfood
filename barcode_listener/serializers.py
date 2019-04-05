@@ -43,11 +43,12 @@ class ProductSerializer(serializers.HyperlinkedModelSerializer):
 
     def create(self, validated_data):
         upcnumber = validated_data.get('upcnumber')
-        if Product.objects.exists(upcnumber=upcnumber):
+        if not Product.objects.filter(upcnumber=upcnumber).exists():
             data = UPC_lookup(upcnumber)
             validated_data = clean_up_keys(data)
             product = super(ProductSerializer, self).create(validated_data)
         else:
             product = Product.objects.get(upcnumber=upcnumber)
-        s = Stock.objects.create(product=product)
+        s = Stock(product=product)
+        s.save()
         return product
