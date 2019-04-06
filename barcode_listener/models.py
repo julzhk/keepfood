@@ -34,6 +34,9 @@ class Product(models.Model):
     class Meta:
         ordering = ['-modified_at', '-created_at']
 
+    def __str__(self):
+        return f'{self.upcnumber}: {self.title}{self.description}'
+
     def save(self, *args, **kwargs):
         """ auto date stamp """
         self.modified_at = timezone.now()
@@ -54,6 +57,9 @@ class Stock(models.Model):
     class Meta:
         ordering = ['-modified_at', '-created_at']
         verbose_name_plural = 'Stock'
+
+    def __str__(self):
+        return f'{self.product.upcnumber}: {self.product.title}{self.product.description} {self.quantity_remaining}%'
 
     def save(self, *args, **kwargs):
         """ auto date stamp """

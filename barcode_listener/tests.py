@@ -52,6 +52,8 @@ class TestAPI(TestCase):
         self.assertEqual(Stock.objects.count(), 1)
         product_tags = Product.objects.first().tags.all()
         self.assertEqual(product_tags.count(), 1)
+        stock_tags = Stock.objects.first().tags.all()
+        self.assertEqual(stock_tags.count(), 1)
 
     @patch('barcode_listener.views.UPC_lookup', mock_UPC_data)
     def test_existing_product_scan_with_two_control_code_scans(self):
@@ -76,3 +78,5 @@ class TestAPI(TestCase):
         self.assertEqual(Stock.objects.count(), 1)
         product_tags = Product.objects.first().tags.all()
         self.assertEqual(product_tags.count(), 2)
+        stock_tags = Stock.objects.first().tags.all()
+        self.assertEqual(stock_tags.count(), 2)

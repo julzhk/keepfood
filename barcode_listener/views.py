@@ -47,24 +47,39 @@ class ProductViewSet(viewsets.ModelViewSet):
         all_tag_slugs = {tag['slug'] for tag in Tag.objects.all().values('slug')}
         upcnumber = pk
         if upcnumber in all_tag_slugs:
-            # we have a character code
-            Log(upcnumber=upcnumber).save()
+            self.create_log_item(upcnumber)
             return HttpResponse('shift')
+        self.product = self.get_or_create_product(upcnumber)
+        self.stock = self.create_stock_item()
+        self.process_tags()
+        return HttpResponse('ok')
 
-        if not Product.objects.filter(upcnumber=upcnumber).exists():
+    def process_tags(self):
+        tag = self.pop_stack()
+        while tag:
+            self.product.tags.add(tag.name)
+            self.stock.tags.add(tag.name)
+            tag = self.pop_stack()
+
+    def create_stock_item(self):
+        stock = Stock(product=self.product)
+        stock.save()
+        return stock
+
+    def create_log_item(self, upcnumber):
+        # we have a character code
+        Log(upcnumber=upcnumber).save()
+
+    def get_or_create_product(self, upcnumber):
+        if Product.objects.filter(upcnumber=upcnumber).exists():
+            product = Product.objects.get(upcnumber=upcnumber)
+        else:
             data = UPC_lookup(upcnumber)
             validated_data = clean_up_keys(data)
             product = Product(**validated_data)
             product.save()
-        else:
-            product = Product.objects.get(upcnumber=upcnumber)
-        tag = self.pop_stack()
-        while tag:
-            product.tags.add(tag.name)
-            tag = self.pop_stack()
-        s = Stock(product=product)
-        s.save()
-        return HttpResponse('ok')
+        return product
+
 
     def pop_stack(self):
         """ if there's anything on the stack get it, and delete it from the Log"""
