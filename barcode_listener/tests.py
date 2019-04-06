@@ -8,14 +8,10 @@ from rest_framework.test import APIClient
 from taggit.models import Tag
 
 from .models import Product, Stock, Log
-from .views import clean_up_keys
 
 
 def mock_UPC_data(upc=None):
-    return {'upcnumber': '3045320094084', 'st0s': '3045320094084', 'newupc': '3045320094084', 'type': '',
-            'title': 'Bonne Maman Rasberry Conserve', 'alias': '', 'description': '', 'brand': '',
-            'category': '', 'size': '', 'color': '', 'gender': '', 'age': '', 'unit': '', 'msrp': '0.00',
-            'rate/up': '0', 'rate/down': '0', 'status': 200, 'error': False}
+    return {'upcnumber': '3045320094084', 'title': 'Bonne Maman Rasberry Conserve', 'description': ''}
 
 
 @patch('barcode_listener.views.UPC_lookup', mock_UPC_data)
@@ -64,7 +60,7 @@ class TestAPI(TestCase):
         """
         IS_A_CAN_UPC_CODE = '000001'
         SIX_MONTH_LIFE = '000002'
-        data = clean_up_keys(mock_UPC_data())
+        data = mock_UPC_data()
         p = Product(**data)
         p.save()
         is_can_tag = Tag(name='is_can', slug=IS_A_CAN_UPC_CODE).save()

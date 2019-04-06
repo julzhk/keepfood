@@ -8,17 +8,13 @@ from .models import Product, Stock, Log
 class ProductAdmin(admin.ModelAdmin):
     list_display = (
         'id',
-        'brand',
-        'category',
-        'description',
-        'newupc',
         'title',
-        'type',
+        'description',
         'upcnumber',
         'tag_list',
 
     )
-    list_filter = ('error', 'created_at', 'modified_at')
+    list_filter = ('created_at', 'modified_at')
     date_hierarchy = 'created_at'
 
     def get_queryset(self, request):

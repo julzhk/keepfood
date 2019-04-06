@@ -35,8 +35,14 @@ def UPC_lookup(upc):
     if product_data.get('error'):
         product_data = {
             'upcnumber': upc,
-            'error': True
+            'title': '-'
         }
+    product_data = {
+        'title': product_data['title'],
+        'description': product_data['description'],
+        'upcnumber': product_data['upcnumber'],
+    }
+
     return product_data
 
 
@@ -107,8 +113,7 @@ class ProductViewSet(viewsets.ModelViewSet):
             product = Product.objects.get(upcnumber=upcnumber)
         else:
             data = UPC_lookup(upcnumber)
-            validated_data = clean_up_keys(data)
-            product = Product(**validated_data)
+            product = Product(**data)
             product.save()
         return product
 
@@ -126,13 +131,3 @@ def listener(request):
     """ home page """
     return HttpResponse('boom')
 
-
-def clean_up_keys(data):
-    """
-    * some returned data keys have / in them..
-    * we don't need 'status' either"""
-    try:
-        del data['status']
-    except KeyError:
-        pass
-    return {k.replace('/', '_'): data[k] for k in data}
