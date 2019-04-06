@@ -3,6 +3,7 @@ from datetime import timedelta
 from django.conf import settings
 from django.db import models
 from django.utils import timezone
+from taggit.managers import TaggableManager
 
 
 class Product(models.Model):
@@ -28,6 +29,8 @@ class Product(models.Model):
     created_at = models.DateTimeField(blank=True)
     modified_at = models.DateTimeField(blank=True)
 
+    tags = TaggableManager()
+
     class Meta:
         ordering = ['-modified_at', '-created_at']
 
@@ -46,8 +49,11 @@ class Stock(models.Model):
     created_at = models.DateTimeField(blank=True)
     modified_at = models.DateTimeField(blank=True)
 
+    tags = TaggableManager()
+
     class Meta:
         ordering = ['-modified_at', '-created_at']
+        verbose_name_plural = 'Stock'
 
     def save(self, *args, **kwargs):
         """ auto date stamp """
@@ -57,3 +63,18 @@ class Stock(models.Model):
             self.quantity_remaining = 100
             self.date_use_by = timezone.now() + timedelta(days=settings.DEFAULT_DAYS_USE_BY)
         return super(Stock, self).save(*args, **kwargs)
+
+
+class Log(models.Model):
+    upcnumber = models.CharField(max_length=32, blank=True)
+    created_at = models.DateTimeField(blank=True)
+
+    def save(self, *args, **kwargs):
+        """ auto date stamp """
+        if not self.id:
+            self.created_at = timezone.now()
+        return super(Log, self).save(*args, **kwargs)
+
+    class Meta:
+        ordering = ['pk', ]
+        verbose_name_plural = 'Log'

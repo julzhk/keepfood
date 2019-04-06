@@ -6,6 +6,8 @@ import requests
 
 KEEPFOOD_KEY = os.environ.get('KEEPFOOD_KEY', '??')
 KEEPFOOD_URL = os.environ.get('KEEPFOOD_URL', '??')
+# something like KEEPFOOD_URL=https://<URL>/api/product/%s/scan
+
 UPC_LOOKUP_ERROR = 'upc number error'
 
 """
@@ -66,7 +68,7 @@ def barcode_reader():
 
 def post_data_to_server(upcnumber):
     response = requests.request(
-        'POST', KEEPFOOD_URL,
+        'POST', KEEPFOOD_URL % upcnumber,
         data=json.dumps({'upcnumber': upcnumber}),
         headers={
             'content-type': 'application/json',

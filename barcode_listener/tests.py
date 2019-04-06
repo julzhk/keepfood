@@ -1,8 +1,19 @@
+from unittest.mock import patch
+
 from django.contrib.auth.models import User
 from django.test import TestCase
 from rest_framework.test import APIClient
+from taggit.models import Tag
 
-from .models import Product, Stock
+from .models import Product, Stock, Log
+from .views import clean_up_keys
+
+
+def mock_UPC_data(upc=None):
+    return {'upcnumber': '3045320094084', 'st0s': '3045320094084', 'newupc': '3045320094084', 'type': '',
+            'title': 'Bonne Maman Rasberry Conserve', 'alias': '', 'description': '', 'brand': '',
+            'category': '', 'size': '', 'color': '', 'gender': '', 'age': '', 'unit': '', 'msrp': '0.00',
+            'rate/up': '0', 'rate/down': '0', 'status': 200, 'error': False}
 
 
 class TestAPI(TestCase):
@@ -13,12 +24,55 @@ class TestAPI(TestCase):
         self.client = APIClient()
         self.client.force_authenticate(user=self.adminuser)
 
-    def test_scan_creates_product_and_two_stock_items(self):
-        client = self.client
-        response = client.post('/api/product/', data={'upcnumber': '3045320094084'}, follow=True)
+    @patch('barcode_listener.views.UPC_lookup', mock_UPC_data)
+    def test_scan_creates_one_product_and_two_stock_items(self):
+        response = self.client.post('/api/product/3045320094084/scan/', follow=True)
         self.assertEqual(Product.objects.count(), 1)
         self.assertEqual(Stock.objects.count(), 1)
 
-        response = client.post('/api/product/', data={'upcnumber': '3045320094084'}, follow=True)
+        response = self.client.post('/api/product/3045320094084/scan/', follow=True)
         self.assertEqual(Product.objects.count(), 1)
         self.assertEqual(Stock.objects.count(), 2)
+
+    @patch('barcode_listener.views.UPC_lookup', mock_UPC_data)
+    def test_new_product_scan_with_control_code_scan(self):
+        """
+        Scan a control char then a new product
+        """
+        IS_A_CAN_UPC_CODE = '000001'
+        # create the control code first:
+        is_can_tag = Tag(name='is_can', slug=IS_A_CAN_UPC_CODE).save()
+        self.assertEqual(Tag.objects.count(), 1)
+
+        response = self.client.post('/api/product/%s/scan/' % IS_A_CAN_UPC_CODE, follow=True)
+        self.assertEqual(Log.objects.count(), 1)
+        response = self.client.post('/api/product/3045320094084/scan/', follow=True)
+        self.assertEqual(Log.objects.count(), 0)
+        self.assertEqual(Product.objects.count(), 1)
+        self.assertEqual(Stock.objects.count(), 1)
+        product_tags = Product.objects.first().tags.all()
+        self.assertEqual(product_tags.count(), 1)
+
+    @patch('barcode_listener.views.UPC_lookup', mock_UPC_data)
+    def test_existing_product_scan_with_two_control_code_scans(self):
+        """
+        Scan a control char then a product
+        """
+        IS_A_CAN_UPC_CODE = '000001'
+        SIX_MONTH_LIFE = '000002'
+        data = clean_up_keys(mock_UPC_data())
+        p = Product(**data)
+        p.save()
+        is_can_tag = Tag(name='is_can', slug=IS_A_CAN_UPC_CODE).save()
+        six_month_tag = Tag(name='six_months_life', slug=SIX_MONTH_LIFE).save()
+        self.assertEqual(Tag.objects.count(), 2)
+
+        response = self.client.post('/api/product/%s/scan/' % IS_A_CAN_UPC_CODE, follow=True)
+        response = self.client.post('/api/product/%s/scan/' % SIX_MONTH_LIFE, follow=True)
+        self.assertEqual(Log.objects.count(), 2)
+        response = self.client.post('/api/product/3045320094084/scan/', follow=True)
+        self.assertEqual(Log.objects.count(), 0)
+        self.assertEqual(Product.objects.count(), 1)
+        self.assertEqual(Stock.objects.count(), 1)
+        product_tags = Product.objects.first().tags.all()
+        self.assertEqual(product_tags.count(), 2)
