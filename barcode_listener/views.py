@@ -13,6 +13,8 @@ KEEPFOOD_KEY = os.environ.get('KEEPFOOD_KEY', '??')
 KEEPFOOD_URL = os.environ.get('KEEPFOOD_URL', '??')
 UPC_LOOKUP_ERROR = 'upc number error'
 UPCDATABASE_URL_PATTERN = "https://api.upcdatabase.org/product/%s/%s"
+EANDATA_URL_PATTERN = "https://eandata.com/feed/?v=3&keycode=%s&mode=json&find=%s/"
+EAN_KEY = os.environ.get('EAN_KEY', '??')
 RESET_STACK_TAG_NAME = 'reset_stack'
 DELETE_TAG_NAME = 'delete_stock'
 
@@ -29,20 +31,33 @@ def UPC_lookup(upc):
     url = UPCDATABASE_URL_PATTERN % (upc, (UPC_KEY))
     response = requests.request("GET", url, headers={'cache-control': "no-cache", })
     product_data = response.json()
-    print("-" * 8)
+    print("-UPCDATABASE - " * 8)
     pprint.pprint(product_data)
     print("-" * 8)
     if product_data.get('error'):
-        product_data = {
-            'upcnumber': upc,
-            'title': '-'
-        }
+        return None
     product_data = {
         'title': product_data['title'],
         'description': product_data['description'],
         'upcnumber': product_data['upcnumber'],
     }
 
+    return product_data
+
+
+def EAN_lookup(upc):
+    ''' uses UPC's V3 API '''
+    url = EANDATA_URL_PATTERN % (EAN_KEY, upc)
+    response = requests.request("GET", url, headers={'cache-control': "no-cache", })
+    product_data = response.json()
+    print("EAN LOOKUP " * 8)
+    pprint.pprint(product_data)
+    print("-" * 8)
+    product_data = {
+        'title': product_data.get('product', {}).get('attributes', {}).get('product', '-'),
+        'description': '',
+        'upcnumber': upc
+    }
     return product_data
 
 
@@ -113,6 +128,8 @@ class ProductViewSet(viewsets.ModelViewSet):
             product = Product.objects.get(upcnumber=upcnumber)
         else:
             data = UPC_lookup(upcnumber)
+            if not data:
+                data = EAN_lookup(upcnumber)
             product = Product(**data)
             product.save()
         return product
