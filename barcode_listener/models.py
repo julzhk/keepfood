@@ -8,19 +8,72 @@ from taggit.models import Tag
 from taggit.models import TaggedItemBase
 
 
-class TaggedProduct(TaggedItemBase):
-    content_object = models.ForeignKey('Product', on_delete=models.CASCADE)
+class CommonTags(object):
+    """ These tags apply to stock and products """
 
-
-class TaggedStock(TaggedItemBase):
-    content_object = models.ForeignKey('Stock', on_delete=models.CASCADE)
+    def set_use_by_date(self, days_in_future):
+        """ any stock items given the tag 'six_months_life' have the expiry date bumped accordingly"""
+        date_expiry = timezone.now() + timedelta(days=days_in_future)
+        self.content_object.date_use_by = date_expiry
+        self.content_object.save()
+        return date_expiry
 
     def six_months_life(self):
+        """ any stock items given the tag 'six_months_life' have the expiry date bumped accordingly"""
+        return self.set_use_by_date(days_in_future=30 * 6)
+
+    def two_weeks_life(self):
+        """ any stock items given this tag have the expiry date bumped accordingly"""
+        return self.set_use_by_date(days_in_future=7 * 2)
+
+    def one_weeks_life(self):
+        """ any stock items given this tag have the expiry date bumped accordingly"""
+        return self.set_use_by_date(days_in_future=7)
+
+    def frozen(self):
         """ any stock items given the tag 'six_months_life' have the expiry date bumped accordingly"""
         date_expiry = timezone.now() + timedelta(days=30 * 6)
         self.content_object.date_use_by = date_expiry
         self.content_object.save()
         return date_expiry
+
+
+class TaggedProduct(TaggedItemBase, CommonTags):
+    content_object = models.ForeignKey('Product', on_delete=models.CASCADE)
+
+
+class TaggedStock(TaggedItemBase, CommonTags):
+    content_object = models.ForeignKey('Stock', on_delete=models.CASCADE)
+
+    def set_remaining_quantity(self, qty_percent):
+        """ set stock items % remaining"""
+        self.content_object.quantity_remaining = qty_percent
+        self.content_object.save()
+        return qty_percent
+
+    def remaining_100(self):
+        return self.set_remaining_quantity(qty_percent=100)
+
+    def remaining_75(self):
+        return self.set_remaining_quantity(qty_percent=75)
+
+    def remaining_50(self):
+        return self.set_remaining_quantity(qty_percent=50)
+
+    def remaining_25(self):
+        return self.set_remaining_quantity(qty_percent=25)
+
+    def remaining_10(self):
+        return self.set_remaining_quantity(qty_percent=10)
+
+    def remaining_0(self):
+        return self.set_remaining_quantity(qty_percent=0)
+
+    def delete_stock(self):
+        # delete all stock items with supplied UPC
+        product = self.content_object.product
+        Stock.objects.filter(product=product).delete()
+
 
 class Product(models.Model):
     age = models.CharField(max_length=128, blank=True)

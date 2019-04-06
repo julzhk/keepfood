@@ -91,14 +91,16 @@ class TestControlCharacters(TestCase):
         self.adminuser.save()
         self.client = APIClient()
         self.client.force_authenticate(user=self.adminuser)
-
         self.IS_A_CAN_UPC_CODE = '000001'
         self.SIX_MONTH_LIFE = '000002'
-
+        from .views import RESET_STACK_TAG_NAME, DELETE_TAG_NAME
         is_can_tag = Tag(name='is_can', slug=self.IS_A_CAN_UPC_CODE).save()
         six_month_tag = Tag(name='six_months_life', slug=self.SIX_MONTH_LIFE).save()
-
-        self.assertEqual(Tag.objects.count(), 2)
+        self.reset_stack_tag = Tag(name=RESET_STACK_TAG_NAME, slug='000003')
+        self.reset_stack_tag.save()
+        self.delete_stock_tag = Tag(name=DELETE_TAG_NAME, slug='000004')
+        self.delete_stock_tag.save()
+        self.assertEqual(Tag.objects.count(), 4)
 
     @patch('barcode_listener.views.UPC_lookup', mock_UPC_data)
     def test_assign_shelf_life(self):
@@ -106,5 +108,19 @@ class TestControlCharacters(TestCase):
         response = self.client.post('/api/product/3045320094084/scan/', follow=True)
         stock = Stock.objects.first()
         date_use_by = timezone.now() + timedelta(days=30 * 6) - timedelta(days=1)
-
         self.assertTrue(stock.date_use_by > date_use_by)
+
+    @patch('barcode_listener.views.UPC_lookup', mock_UPC_data)
+    def test_reset_stack(self):
+        response = self.client.post('/api/product/%s/scan/' % self.SIX_MONTH_LIFE, follow=True)
+        response = self.client.post('/api/product/%s/scan/' % self.IS_A_CAN_UPC_CODE, follow=True)
+        self.assertEqual(Log.objects.count(), 2)
+        response = self.client.post('/api/product/%s/scan/' % self.reset_stack_tag.slug, follow=True)
+        self.assertEqual(Stock.objects.count(), 0)
+        self.assertEqual(Log.objects.count(), 0)
+
+    @patch('barcode_listener.views.UPC_lookup', mock_UPC_data)
+    def test_delete_stock(self):
+        response = self.client.post('/api/product/%s/scan/' % self.delete_stock_tag.slug, follow=True)
+        response = self.client.post('/api/product/3045320094084/scan/', follow=True)
+        self.assertEqual(Stock.objects.count(), 0)

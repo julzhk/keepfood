@@ -1,8 +1,11 @@
 #!/usr/bin/python
 import json
+import logging
 import os
 
 import requests
+
+logging.basicConfig(filename="logs/scanner.log", level=logging.DEBUG)
 
 KEEPFOOD_KEY = os.environ.get('KEEPFOOD_KEY', '??')
 KEEPFOOD_URL = os.environ.get('KEEPFOOD_URL', '??')
@@ -81,7 +84,7 @@ if __name__ == '__main__':
     try:
         while True:
             upcnumber = barcode_reader()
-            print(upcnumber)
+            logging.debug('scanned: ' + str(upcnumber))
             post_data_to_server(upcnumber)
     except KeyboardInterrupt:
         pass
