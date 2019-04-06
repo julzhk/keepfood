@@ -14,6 +14,10 @@ KEEPFOOD_URL = os.environ.get('KEEPFOOD_URL', '??')
 UPC_LOOKUP_ERROR = 'upc number error'
 UPCDATABASE_URL_PATTERN = "https://api.upcdatabase.org/product/%s/%s"
 
+
+class ControlCodeException(Exception):
+    pass
+
 from .models import Product, Stock, Log
 from .serializers import ProductSerializer
 
@@ -44,22 +48,40 @@ class ProductViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'])
     def scan(self, request, pk=None):
-        all_tag_slugs = {tag['slug'] for tag in Tag.objects.all().values('slug')}
         upcnumber = pk
-        if upcnumber in all_tag_slugs:
-            self.create_log_item(upcnumber)
-            return HttpResponse('shift')
+        try:
+            self.process_control_characters(upcnumber=upcnumber)
+        except ControlCodeException:
+            return HttpResponse('control')
         self.product = self.get_or_create_product(upcnumber)
         self.stock = self.create_stock_item()
         self.process_tags()
         return HttpResponse('ok')
 
+    def process_control_characters(self, upcnumber):
+        """ if upc code is a control character, add to the stack and return with no further processing"""
+        all_tag_slugs = {tag['slug'] for tag in Tag.objects.all().values('slug')}
+        if upcnumber in all_tag_slugs:
+            self.create_log_item(upcnumber)
+            raise ControlCodeException()
+
     def process_tags(self):
         tag = self.pop_stack()
         while tag:
-            self.product.tags.add(tag.name)
-            self.stock.tags.add(tag.name)
+            tag_name = tag.name
+            self.product.tags.add(tag_name)
+            self.stock.tags.add(tag_name)
+            for stock_tag in self.stock.taggedstock_set.all():
+                self.execute_tag_methods(stock_tag, tag_name)
             tag = self.pop_stack()
+
+    def execute_tag_methods(self, stock_tag, tag_name):
+        try:
+            func = getattr(stock_tag, tag_name)
+            r = func()
+            print(f'{func.__name__} : {r}')
+        except AttributeError:
+            print(f'no {tag_name} method')
 
     def create_stock_item(self):
         stock = Stock(product=self.product)
@@ -67,7 +89,7 @@ class ProductViewSet(viewsets.ModelViewSet):
         return stock
 
     def create_log_item(self, upcnumber):
-        # we have a character code
+        # we have a character code, add to the stack
         Log(upcnumber=upcnumber).save()
 
     def get_or_create_product(self, upcnumber):
@@ -91,6 +113,7 @@ class ProductViewSet(viewsets.ModelViewSet):
 
 
 def listener(request):
+    """ home page """
     return HttpResponse('boom')
 
 

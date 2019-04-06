@@ -4,7 +4,23 @@ from django.conf import settings
 from django.db import models
 from django.utils import timezone
 from taggit.managers import TaggableManager
+from taggit.models import Tag
+from taggit.models import TaggedItemBase
 
+
+class TaggedProduct(TaggedItemBase):
+    content_object = models.ForeignKey('Product', on_delete=models.CASCADE)
+
+
+class TaggedStock(TaggedItemBase):
+    content_object = models.ForeignKey('Stock', on_delete=models.CASCADE)
+
+    def six_months_life(self):
+        """ any stock items given the tag 'six_months_life' have the expiry date bumped accordingly"""
+        date_expiry = timezone.now() + timedelta(days=30 * 6)
+        self.content_object.date_use_by = date_expiry
+        self.content_object.save()
+        return date_expiry
 
 class Product(models.Model):
     age = models.CharField(max_length=128, blank=True)
@@ -29,7 +45,7 @@ class Product(models.Model):
     created_at = models.DateTimeField(blank=True)
     modified_at = models.DateTimeField(blank=True)
 
-    tags = TaggableManager()
+    tags = TaggableManager(through=TaggedProduct)
 
     class Meta:
         ordering = ['-modified_at', '-created_at']
@@ -52,7 +68,7 @@ class Stock(models.Model):
     created_at = models.DateTimeField(blank=True)
     modified_at = models.DateTimeField(blank=True)
 
-    tags = TaggableManager()
+    tags = TaggableManager(through=TaggedStock)
 
     class Meta:
         ordering = ['-modified_at', '-created_at']
