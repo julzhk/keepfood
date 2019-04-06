@@ -1,0 +1,2 @@
+// Add this to : sudo crontab -e
+@reboot sh /home/pi/Projects/keepfood_client/launcher.sh >/home/pi/Projects/keepfood_client/logs/cronlog 2>&1

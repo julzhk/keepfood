@@ -13,6 +13,7 @@ KEEPFOOD_KEY = os.environ.get('KEEPFOOD_KEY', '??')
 KEEPFOOD_URL = os.environ.get('KEEPFOOD_URL', '??')
 UPC_LOOKUP_ERROR = 'upc number error'
 UPCDATABASE_URL_PATTERN = "https://api.upcdatabase.org/product/%s/%s"
+RESET_STACK_TAG_NAME = 'reset_stack'
 
 
 class ControlCodeException(Exception):
@@ -60,10 +61,18 @@ class ProductViewSet(viewsets.ModelViewSet):
 
     def process_control_characters(self, upcnumber):
         """ if upc code is a control character, add to the stack and return with no further processing"""
+        self.process_reset_stack_command(upcnumber)
         all_tag_slugs = {tag['slug'] for tag in Tag.objects.all().values('slug')}
         if upcnumber in all_tag_slugs:
             self.create_log_item(upcnumber)
             raise ControlCodeException()
+
+    def process_reset_stack_command(self, upcnumber):
+        reset_stack_tag = Tag.objects.filter(name=RESET_STACK_TAG_NAME).first()
+        if reset_stack_tag and upcnumber == reset_stack_tag.slug:
+            Log.objects.all().delete()
+            raise ControlCodeException()
+
 
     def process_tags(self):
         tag = self.pop_stack()
