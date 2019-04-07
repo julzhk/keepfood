@@ -7,11 +7,8 @@ from django.utils import timezone
 from rest_framework.test import APIClient
 from taggit.models import Tag
 
+from barcode_listener.mock_data import mock_UPC_data
 from .models import Product, Stock, Log
-
-
-def mock_UPC_data(upc=None):
-    return {'upcnumber': '3045320094084', 'title': 'Bonne Maman Rasberry Conserve', 'description': ''}
 
 
 @patch('barcode_listener.views.UPC_lookup', mock_UPC_data)

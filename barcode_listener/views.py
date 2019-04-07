@@ -9,11 +9,9 @@ from rest_framework.permissions import IsAuthenticated
 from taggit.models import Tag
 
 UPC_KEY = os.environ.get('UPC_KEY', '??')  # https://upcdatabase.org/
-KEEPFOOD_KEY = os.environ.get('KEEPFOOD_KEY', '??')
-KEEPFOOD_URL = os.environ.get('KEEPFOOD_URL', '??')
 UPC_LOOKUP_ERROR = 'upc number error'
 UPCDATABASE_URL_PATTERN = "https://api.upcdatabase.org/product/%s/%s"
-EANDATA_URL_PATTERN = "https://eandata.com/feed/?v=3&keycode=%s&mode=json&find=%s/"
+EANDATA_URL_PATTERN = "https://eandata.com/feed/?v=3&keycode=%s&mode=json&find=%s"
 EAN_KEY = os.environ.get('EAN_KEY', '??')
 RESET_STACK_TAG_NAME = 'reset_stack'
 DELETE_TAG_NAME = 'delete_stock'
@@ -25,40 +23,48 @@ class ControlCodeException(Exception):
 from .models import Product, Stock, Log
 from .serializers import ProductSerializer
 
-
 def UPC_lookup(upc):
-    ''' uses UPC's V3 API '''
-    url = UPCDATABASE_URL_PATTERN % (upc, (UPC_KEY))
-    response = requests.request("GET", url, headers={'cache-control': "no-cache", })
-    product_data = response.json()
-    print("-UPCDATABASE - " * 8)
-    pprint.pprint(product_data)
-    print("-" * 8)
-    if product_data.get('error'):
+    '''
+        uses UPC's V3 API
+    '''
+    try:
+        url = UPCDATABASE_URL_PATTERN % (upc, (UPC_KEY))
+        response = requests.request("GET", url, headers={'cache-control': "no-cache", })
+        product_data = response.json()
+        print("-UPCDATABASE - " * 8)
+        pprint.pprint(product_data)
+        print("-" * 8)
+        if product_data.get('error'):
+            return None
+        product_data = {
+            'title': product_data['title'],
+            'description': product_data['description'],
+            'upcnumber': product_data['upcnumber'],
+        }
+        return product_data
+    except Exception as err:
+        print(err)
         return None
-    product_data = {
-        'title': product_data['title'],
-        'description': product_data['description'],
-        'upcnumber': product_data['upcnumber'],
-    }
-
-    return product_data
 
 
 def EAN_lookup(upc):
-    ''' uses UPC's V3 API '''
-    url = EANDATA_URL_PATTERN % (EAN_KEY, upc)
-    response = requests.request("GET", url, headers={'cache-control': "no-cache", })
-    product_data = response.json()
-    print("EAN LOOKUP " * 8)
-    pprint.pprint(product_data)
-    print("-" * 8)
-    product_data = {
-        'title': product_data.get('product', {}).get('attributes', {}).get('product', '-'),
-        'description': '',
-        'upcnumber': upc
-    }
-    return product_data
+    try:
+        url = EANDATA_URL_PATTERN % (EAN_KEY, upc)
+        response = requests.request("GET", url, headers={'cache-control': "no-cache", })
+        product_data = response.json()
+        print("EAN LOOKUP " * 8)
+        pprint.pprint(product_data)
+        print("-" * 8)
+        title = product_data.get('product')[0].get('attributes', {}).get('product', '-')
+        product_data = {
+            'title': title,
+            'description': '',
+            'upcnumber': upc
+        }
+        return product_data
+    except Exception as err:
+        print(err)
+        return None
 
 
 class ProductViewSet(viewsets.ModelViewSet):
@@ -124,15 +130,17 @@ class ProductViewSet(viewsets.ModelViewSet):
         Log(upcnumber=upcnumber).save()
 
     def get_or_create_product(self, upcnumber):
+        """ todo move to model"""
         if Product.objects.filter(upcnumber=upcnumber).exists():
-            product = Product.objects.get(upcnumber=upcnumber)
+            return Product.objects.get(upcnumber=upcnumber)
         else:
-            data = UPC_lookup(upcnumber)
-            if not data:
-                data = EAN_lookup(upcnumber)
-            product = Product(**data)
-            product.save()
-        return product
+            for func in [UPC_lookup, EAN_lookup]:
+                data = func(upcnumber)
+                if data:
+                    product = Product(**data)
+                    product.save()
+                    return product
+
 
 
     def pop_stack(self):
