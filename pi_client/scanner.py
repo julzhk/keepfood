@@ -2,8 +2,11 @@
 import json
 import logging
 import os
+from random import randint
+from time import sleep
 
 import requests
+import unicornhat as unicorn
 
 logging.basicConfig(filename="logs/scanner.log", level=logging.DEBUG)
 
@@ -16,6 +19,8 @@ UPC_LOOKUP_ERROR = 'upc number error'
 """
 Run this on the raspberry pi with the USB barcode scanner attached
 It needs an environment variable of the UPC database acccess key set
+
+Unicorn hat used for scanning confirmation: Twinkles!
 
 USAGE: 
 add UPC_KEY as env variable: 
@@ -45,6 +50,9 @@ CHARMAP_UPPERCASE = {4: 'A', 5: 'B', 6: 'C', 7: 'D', 8: 'E', 9: 'F', 10: 'G', 11
 CR_CHAR = 40
 SHIFT_CHAR = 2
 
+if KEEPFOOD_URL == '??':
+    print('Env vars not set? or start with sudo -E scanner.py')
+    exit()
 
 def barcode_reader():
     barcode_string_output = ''
@@ -78,13 +86,51 @@ def post_data_to_server(upcnumber):
             'Authorization': 'Token %s' % KEEPFOOD_KEY
         }
     )
+    if response.status_code == 200:
+        show_twinke_confirmation(32, 255, 32)
+    else:
+        show_colour_confirmation(255, 32, 32)
+
+
+def show_colour_confirmation(r=160, g=64, b=128):
+    width, height = unicorn.get_shape()
+    for i in range(0, width * height):
+        x = i % width
+        y = i // height
+        unicorn.set_pixel(x, y, r, g, b)
+        unicorn.show()
+        sleep(0.01)
+    unicorn.off()
+
+
+def show_twinke_confirmation(rx=255, gx=255, bx=255):
+    width, height = unicorn.get_shape()
+    for i in range(0, 300):
+        x = randint(0, (width - 1))
+        y = randint(0, (height - 1))
+        r = randint(0, rx)
+        g = randint(0, gx)
+        b = randint(0, bx)
+        unicorn.set_pixel(x, y, r, g, b)
+        unicorn.show()
+    unicorn.off()
+
 
 
 if __name__ == '__main__':
+    unicorn.set_layout(unicorn.AUTO)
+    unicorn.rotation(0)
+    unicorn.brightness(0.5)
+    show_colour_confirmation()
     try:
         while True:
             upcnumber = barcode_reader()
             logging.debug('scanned: ' + str(upcnumber))
             post_data_to_server(upcnumber)
     except KeyboardInterrupt:
-        pass
+        logging.debug('Keyboard interrupt ')
+        show_colour_confirmation(32, 32, 255)
+    except Exception as err:
+        print(err)
+        logging.debug('Main exit exception: ' + str(err))
+        show_colour_confirmation(32, 32, 255)
