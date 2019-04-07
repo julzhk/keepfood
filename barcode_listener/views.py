@@ -3,6 +3,7 @@ import pprint
 
 import requests
 from django.shortcuts import HttpResponse
+from django.template.response import TemplateResponse
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
@@ -101,7 +102,6 @@ class ProductViewSet(viewsets.ModelViewSet):
             Log.objects.all().delete()
             raise ControlCodeException()
 
-
     def process_tags(self):
         tag = self.pop_stack()
         while tag:
@@ -141,8 +141,6 @@ class ProductViewSet(viewsets.ModelViewSet):
                     product.save()
                     return product
 
-
-
     def pop_stack(self):
         """ if there's anything on the stack get it, and delete it from the Log"""
         if Log.objects.count():
@@ -153,6 +151,6 @@ class ProductViewSet(viewsets.ModelViewSet):
 
 
 def listener(request):
-    """ home page """
-    return HttpResponse('boom')
+    """ home page : shows tag control codes"""
 
+    return TemplateResponse(request, 'barcode_listener/control_codes.html', {'tags': Tag.objects.all()})

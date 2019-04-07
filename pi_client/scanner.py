@@ -13,7 +13,7 @@ logging.basicConfig(filename="logs/scanner.log", level=logging.DEBUG)
 KEEPFOOD_KEY = os.environ.get('KEEPFOOD_KEY', '??')
 KEEPFOOD_URL = os.environ.get('KEEPFOOD_URL', '??')
 # something like KEEPFOOD_URL=https://<URL>/api/product/%s/scan
-
+logging.debug('start with ' + KEEPFOOD_URL)
 UPC_LOOKUP_ERROR = 'upc number error'
 
 """
@@ -79,7 +79,7 @@ def barcode_reader():
 
 def post_data_to_server(upcnumber):
     response = requests.request(
-        'POST', KEEPFOOD_URL % upcnumber,
+        'POST', f'{KEEPFOOD_URL}{upcnumber}/scan/',
         data=json.dumps({'upcnumber': upcnumber}),
         headers={
             'content-type': 'application/json',
