@@ -1,3 +1,7 @@
+import base64
+import hashlib
+import hmac
+import logging
 import os
 import pprint
 
@@ -9,10 +13,19 @@ from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from taggit.models import Tag
 
+from .models import Product, Stock, Log
+from .serializers import ProductSerializer
+
 UPC_KEY = os.environ.get('UPC_KEY', '??')  # https://upcdatabase.org/
 UPC_LOOKUP_ERROR = 'upc number error'
 UPCDATABASE_URL_PATTERN = "https://api.upcdatabase.org/product/%s/%s"
+
 EANDATA_URL_PATTERN = "https://eandata.com/feed/?v=3&keycode=%s&mode=json&find=%s"
+
+DIGIT_EYES_URL = 'https://www.digit-eyes.com/gtin/v2_0/?upcCode={upc}/&field_names=all&language=en&app_key={key}&signature={signature}'
+DIGIT_EYES_APPKEY = os.environ.get('DIGIT_EYES_KEY', '??')
+DIGIT_EYES_AUTH_KEY = os.environ.get('DIGIT_EYES_AUTH_KEY', '??')
+
 EAN_KEY = os.environ.get('EAN_KEY', '??')
 RESET_STACK_TAG_NAME = 'reset_stack'
 DELETE_TAG_NAME = 'delete_stock'
@@ -21,8 +34,38 @@ DELETE_TAG_NAME = 'delete_stock'
 class ControlCodeException(Exception):
     pass
 
-from .models import Product, Stock, Log
-from .serializers import ProductSerializer
+
+def DigitEyes_lookup(upc):
+    '''
+        uses UPC's V3 API
+    '''
+    try:
+        sha_hash = hmac.new(str.encode(DIGIT_EYES_AUTH_KEY), str.encode(upc), hashlib.sha1)
+        sig = base64.b64encode(sha_hash.digest()).decode()
+        url = DIGIT_EYES_URL.format(
+            upc=upc,
+            key=DIGIT_EYES_APPKEY,
+            signature=sig,
+        )
+        logging.debug(url)
+        response = requests.request("GET", url, headers={'cache-control': "no-cache", })
+        product_data = response.json()
+        print("-DIGIT EYES - " * 8)
+        pprint.pprint(product_data)
+        print("-" * 8)
+        if product_data.get('return_message').lower() != 'success':
+            return None
+        product_data = {
+            'title': product_data['description'],
+            'description': product_data['description'],
+            'upcnumber': product_data['upc_code'],
+        }
+        return product_data
+    except Exception as err:
+        print(err)
+        logging.error(err)
+        return None
+
 
 def UPC_lookup(upc):
     '''
@@ -45,6 +88,7 @@ def UPC_lookup(upc):
         return product_data
     except Exception as err:
         print(err)
+        logging.error(err)
         return None
 
 
@@ -65,6 +109,7 @@ def EAN_lookup(upc):
         return product_data
     except Exception as err:
         print(err)
+        logging.error(err)
         return None
 
 
@@ -134,7 +179,7 @@ class ProductViewSet(viewsets.ModelViewSet):
         if Product.objects.filter(upcnumber=upcnumber).exists():
             return Product.objects.get(upcnumber=upcnumber)
         else:
-            for func in [UPC_lookup, EAN_lookup]:
+            for func in [UPC_lookup, EAN_lookup, DigitEyes_lookup]:
                 data = func(upcnumber)
                 if data:
                     product = Product(**data)
