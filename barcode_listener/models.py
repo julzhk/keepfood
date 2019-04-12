@@ -1,5 +1,12 @@
+import base64
+import hashlib
+import hmac
+import logging
+import os
+import pprint
 from datetime import timedelta
 
+import requests
 from django.conf import settings
 from django.db import models
 from django.utils import timezone
@@ -7,9 +14,106 @@ from taggit.managers import TaggableManager
 from taggit.models import Tag
 from taggit.models import TaggedItemBase
 
+UPC_KEY = os.environ.get('UPC_KEY', '??')  # https://upcdatabase.org/
+UPC_LOOKUP_ERROR = 'upc number error'
+UPCDATABASE_URL_PATTERN = "https://api.upcdatabase.org/product/%s/%s"
+EANDATA_URL_PATTERN = "https://eandata.com/feed/?v=3&keycode=%s&mode=json&find=%s"
+DIGIT_EYES_KEY_M = os.environ.get('DIGIT_EYES_KEY_M', '??')
+DIGIT_EYES_KEY_K = os.environ.get('DIGIT_EYES_KEY_K', '??')
+EAN_KEY = os.environ.get('EAN_KEY', '??')
+
+
+def generate_signature(upc, auth_key_m=DIGIT_EYES_KEY_M):
+    sha_hash = hmac.new(str.encode(auth_key_m), str.encode(upc), hashlib.sha1)
+    sig = base64.b64encode(sha_hash.digest()).decode()
+    return sig
+
+
+def DigitEyes_lookup(upc, auth_key_m=DIGIT_EYES_KEY_M, auth_key_k=DIGIT_EYES_KEY_K):
+    '''
+        uses UPC's V3 API
+    '''
+    try:
+        sig = generate_signature(upc, auth_key_m)
+        url = generate_digiteyes_url(upc, sig, auth_key_k)
+        logging.debug(url)
+        response = requests.request("GET", url, headers={'cache-control': "no-cache", })
+        product_data = response.json()
+        print("-DIGIT EYES - " * 8)
+        pprint.pprint(product_data)
+        print("-" * 8)
+        if product_data.get('return_message').lower() != 'success':
+            return None
+        return product_data
+        product_data = {
+            'title': product_data['description'],
+            'description': product_data['description'],
+            'upcnumber': product_data['upc_code'],
+        }
+    except Exception as err:
+        print(err)
+        logging.error(err)
+        return None
+
+
+def generate_digiteyes_url(upc, sig, auth_key_k=DIGIT_EYES_KEY_K):
+    DIGIT_EYES_URL = 'https://www.digit-eyes.com/gtin/v2_0/?upcCode={upc}&' \
+                     'language=en&app_key={key}&signature={signature}'
+    return DIGIT_EYES_URL.format(
+        upc=upc,
+        key=auth_key_k,
+        signature=sig,
+    )
+
+
+def UPC_lookup(upc):
+    '''
+        uses UPC's V3 API
+    '''
+    try:
+        url = UPCDATABASE_URL_PATTERN % (upc, (UPC_KEY))
+        response = requests.request("GET", url, headers={'cache-control': "no-cache", })
+        product_data = response.json()
+        print("-UPCDATABASE - " * 8)
+        pprint.pprint(product_data)
+        print("-" * 8)
+        if product_data.get('error'):
+            return None
+        product_data = {
+            'title': product_data['title'],
+            'description': product_data['description'],
+            'upcnumber': product_data['upcnumber'],
+        }
+        return product_data
+    except Exception as err:
+        print(err)
+        logging.error(err)
+        return None
+
+
+def EAN_lookup(upc):
+    try:
+        url = EANDATA_URL_PATTERN % (EAN_KEY, upc)
+        response = requests.request("GET", url, headers={'cache-control': "no-cache", })
+        product_data = response.json()
+        print("EAN LOOKUP " * 8)
+        pprint.pprint(product_data)
+        print("-" * 8)
+        return product_data
+        # title = product_data.get('product')[0].get('attributes', {}).get('product', '-')
+        # product_data = {
+        #     'title': title,
+        #     'description': '',
+        #     'upcnumber': upc
+        # }
+    except Exception as err:
+        print(err)
+        logging.error(err)
+        return None
 
 class CommonTags(object):
-    """ These tags apply to stock and products """
+    """ These tags apply to both stock and products """
+    content_object = None
 
     def set_use_by_date(self, days_in_future):
         """ any stock items given the tag 'six_months_life' have the expiry date bumped accordingly"""
@@ -83,7 +187,7 @@ class Product(models.Model):
     created_at = models.DateTimeField(blank=True)
     modified_at = models.DateTimeField(blank=True)
 
-    tags = TaggableManager(through=TaggedProduct)
+    tags = TaggableManager(through=TaggedProduct, blank=True)
 
     class Meta:
         ordering = ['-modified_at', '-created_at']
@@ -106,7 +210,7 @@ class Stock(models.Model):
     created_at = models.DateTimeField(blank=True)
     modified_at = models.DateTimeField(blank=True)
 
-    tags = TaggableManager(through=TaggedStock)
+    tags = TaggableManager(through=TaggedStock, blank=True)
 
     class Meta:
         ordering = ['-modified_at', '-created_at']
@@ -138,3 +242,4 @@ class Log(models.Model):
     class Meta:
         ordering = ['pk', ]
         verbose_name_plural = 'Log'
+

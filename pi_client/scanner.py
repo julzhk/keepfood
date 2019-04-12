@@ -79,7 +79,7 @@ def barcode_reader():
 
 def post_data_to_server(upcnumber):
     response = requests.request(
-        'POST', f'{KEEPFOOD_URL}{upcnumber}/scan/',
+        'POST', KEEPFOOD_URL + upcnumber + '/scan/',
         data=json.dumps({'upcnumber': upcnumber}),
         headers={
             'content-type': 'application/json',

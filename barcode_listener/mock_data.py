@@ -1,3 +1,18 @@
+def digit_eyes():
+    return {'upc_code': '5000169132432', 'formattedNutrition': None,
+            'image': 'http://cyber-ean.uk/imageCache.php?name=Waitrose-Puttanesca-pasta-sauce', 'brand': 'Waitrose LTD',
+            'return_message': 'Success',
+            'gcp': {'country': 'GB', 'city': 'London', 'gln': '5000169', 'company': 'John Lewis Plc', 'contact': None,
+                    'address2': None, 'fax': None, 'state': None, 'address': '10 Clipstone', 'postal_code': 'W1A 3DF',
+                    'gcp': '5000169', 'phone': '448456100333'}, 'nutrition': None,
+            'description': 'Waitrose Puttanesca Pasta Sauce', 'usage': '', 'uom': None, 'return_code': '000',
+            'product_web_page': 'http://cyber-ean.uk/product/Waitrose-Puttanesca-pasta-sauce-ean-05000169132432.html',
+            'language': 'en', 'ingredients': None,
+            'manufacturer': {'address': None, 'state': None, 'postal_code': None, 'phone': None, 'country': None,
+                             'city': None, 'contact': None, 'company': None, 'address2': None}, 'gcp_gcp': '5000169',
+            'website': 'cyber-ean.uk/'}
+
+
 def mock_UPC_feed(upc='3045320094084'):
     return {'age': '',
             'alias': '',
