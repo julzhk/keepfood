@@ -23,11 +23,19 @@ DIGIT_EYES_KEY_K = os.environ.get('DIGIT_EYES_KEY_K', '??')
 EAN_KEY = os.environ.get('EAN_KEY', '??')
 
 
+def generate_digiteyes_url(upc, sig, auth_key_k=DIGIT_EYES_KEY_K):
+    DIGIT_EYES_URL = 'https://www.digit-eyes.com/gtin/v2_0/?upcCode={upc}&' \
+                     'language=en&app_key={key}&signature={signature}'
+    return DIGIT_EYES_URL.format(
+        upc=upc,
+        key=auth_key_k,
+        signature=sig,
+    )
+
 def generate_signature(upc, auth_key_m=DIGIT_EYES_KEY_M):
     sha_hash = hmac.new(str.encode(auth_key_m), str.encode(upc), hashlib.sha1)
     sig = base64.b64encode(sha_hash.digest()).decode()
     return sig
-
 
 def DigitEyes_lookup(upc, auth_key_m=DIGIT_EYES_KEY_M, auth_key_k=DIGIT_EYES_KEY_K):
     '''
@@ -45,26 +53,10 @@ def DigitEyes_lookup(upc, auth_key_m=DIGIT_EYES_KEY_M, auth_key_k=DIGIT_EYES_KEY
         if product_data.get('return_message').lower() != 'success':
             return None
         return product_data
-        product_data = {
-            'title': product_data['description'],
-            'description': product_data['description'],
-            'upcnumber': product_data['upc_code'],
-        }
     except Exception as err:
         print(err)
         logging.error(err)
         return None
-
-
-def generate_digiteyes_url(upc, sig, auth_key_k=DIGIT_EYES_KEY_K):
-    DIGIT_EYES_URL = 'https://www.digit-eyes.com/gtin/v2_0/?upcCode={upc}&' \
-                     'language=en&app_key={key}&signature={signature}'
-    return DIGIT_EYES_URL.format(
-        upc=upc,
-        key=auth_key_k,
-        signature=sig,
-    )
-
 
 def UPC_lookup(upc):
     '''
@@ -79,17 +71,11 @@ def UPC_lookup(upc):
         print("-" * 8)
         if product_data.get('error'):
             return None
-        product_data = {
-            'title': product_data['title'],
-            'description': product_data['description'],
-            'upcnumber': product_data['upcnumber'],
-        }
         return product_data
     except Exception as err:
         print(err)
         logging.error(err)
         return None
-
 
 def EAN_lookup(upc):
     try:
@@ -141,10 +127,8 @@ class CommonTags(object):
         self.content_object.save()
         return date_expiry
 
-
 class TaggedProduct(TaggedItemBase, CommonTags):
     content_object = models.ForeignKey('Product', on_delete=models.CASCADE)
-
 
 class TaggedStock(TaggedItemBase, CommonTags):
     content_object = models.ForeignKey('Stock', on_delete=models.CASCADE)
@@ -178,7 +162,6 @@ class TaggedStock(TaggedItemBase, CommonTags):
         product = self.content_object.product
         Stock.objects.filter(product=product).delete()
 
-
 class Product(models.Model):
     title = models.CharField(max_length=128, blank=True)
     description = models.CharField(max_length=128, blank=True)
@@ -202,6 +185,29 @@ class Product(models.Model):
             self.created_at = timezone.now()
         return super(Product, self).save(*args, **kwargs)
 
+    @classmethod
+    def populate(cls, upc):
+        product_data = DigitEyes_lookup(upc=upc)
+        if product_data:
+            product_data = {
+                'title': product_data.get('description'),
+                'description': product_data['description'],
+                'upcnumber': product_data['upc_code'],
+            }
+        else:
+            product_data = cls.create_placeholder_product(upc)
+        p = Product(**product_data)
+        p.save()
+        return p
+
+    @classmethod
+    def create_placeholder_product(cls, upc):
+        product_data = {
+            'title': 'Not found',
+            'description': 'Not found',
+            'upcnumber': upc
+        }
+        return product_data
 
 class Stock(models.Model):
     product = models.ForeignKey('Product', on_delete=models.CASCADE)

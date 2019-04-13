@@ -1,14 +1,17 @@
 import os
 
+from django.contrib.auth.models import User
 from django.test import TestCase
+from rest_framework.test import APIClient
 
 from barcode_listener.models import generate_signature, DigitEyes_lookup, generate_digiteyes_url, UPC_lookup, EAN_lookup
+from .models import Product, Stock
 
 
 class TestDigitEyesAPI(TestCase):
     def setUp(self):
         self.ean = '3045320094084'
-        self, AUTH_KEY_K = 'sfwefg3v0f8Fo8He4'
+        self.AUTH_KEY_K = 'sfwefg3v0f8Fo8He4'
         """'This sfwefg3v0f8Fo8He4' is a fake key BTW"""
 
     def test_digiteyes_signature(self):
@@ -28,7 +31,7 @@ class TestREALAPI(TestCase):
 
     def test_upc_lookup(self):
         upc_data = (UPC_lookup(self.ean))
-        self.assertEqual(upc_data['newupc'], self.ean)
+        self.assertEqual(upc_data['upcnumber'], self.ean)
 
     def test_ean_lookup(self):
         ean_data = EAN_lookup(self.ean)
@@ -39,3 +42,18 @@ class TestREALAPI(TestCase):
         self.assertNotEquals(os.environ.get('DIGIT_EYES_KEY_K', '??'), '??')
         ean_data = DigitEyes_lookup(self.ean)
         self.assertEqual(ean_data['return_message'], 'Success')
+
+
+class TestRealAPI(TestCase):
+    def setUp(self):
+        self.adminuser = User.objects.create_superuser('admin', 'admin@test.com', 'pass')
+        self.adminuser.save()
+        self.client = APIClient()
+        self.client.force_authenticate(user=self.adminuser)
+
+    def test_pasta(self):
+        upc = '8000139910753'
+        response = self.client.post(f'/api/product/{upc}/scan/', follow=True)
+        self.assertEqual(Product.objects.count(), 1)
+        self.assertEqual(Stock.objects.count(), 1)
+        self.assertEqual(response.status_code, 200)

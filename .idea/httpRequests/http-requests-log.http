@@ -1,0 +1,136 @@
+POST http://localhost:8080/get_auth_token/?username=admin&password=pw1000000
+Accept: */*
+Cache-Control: no-cache
+username: admin
+
+username=admin;password=pw1000000
+
+<> 2019-04-13T055058-1.200.json
+
+###
+
+POST http://localhost:8080/get_auth_token/?username=admin&password=pw1000000
+Accept: */*
+Cache-Control: no-cache
+username: admin
+
+username=admin;password=pw1000000
+
+<> 2019-04-13T055058.200.json
+
+###
+
+POST localhost:8080/get_auth_token/?username=admin&password=pw1000000
+Accept: */*
+Cache-Control: no-cache
+username: admin
+
+username=admin;password=pw1000000
+
+###
+
+POST https://keepfood.herokuapp.com/get_auth_token/?username=admin&password=pw1000000
+Accept: */*
+Cache-Control: no-cache
+username: admin
+
+username=admin;password=pw1000000
+
+<> 2019-04-05T061501.200.json
+
+###
+
+POST https://keepfood.herokuapp.com/get_auth_token/?username=admin&password=pw1000000
+Accept: */*
+Cache-Control: no-cache
+username: admin
+
+username=admin;password=pw1000000
+
+<> 2019-04-05T061432.500.txt
+
+###
+
+POST https://keepfood.herokuapp.com/get_auth_token/?username=admin&password=pw1000000
+Accept: */*
+Cache-Control: no-cache
+username: admin
+
+username=admin;password=pw1000000
+
+<> 2019-04-05T060911.404.html
+
+###
+
+POST https://keepfood.herokuapp.com/get_auth_token/?username=admin&password=pw1000000
+Accept: */*
+Cache-Control: no-cache
+username: admin
+
+username=admin;password=pw1000000
+
+<> 2019-04-05T060906.404.html
+
+###
+
+POST http://127.0.0.1:8080/get_auth_token/?username=admin&password=pw1000000
+Accept: */*
+Cache-Control: no-cache
+username: admin
+
+username=admin;password=pw1000000
+
+<> 2019-04-05T055715.200.json
+
+###
+
+POST http://127.0.0.1:8080/get_auth_token/?username=admin&password=pw1000000
+Accept: */*
+Cache-Control: no-cache
+username: admin
+
+username=admin
+
+<> 2019-04-05T055703.400.json
+
+###
+
+POST http://127.0.0.1:8080/get_auth_token/?username=admin&password=pw1000000
+Accept: */*
+Cache-Control: no-cache
+username: admin
+
+<> 2019-04-05T055638.400.json
+
+###
+
+POST http://127.0.0.1:8080/get_auth_token/?username=admin&password=pw1000000
+Accept: */*
+Cache-Control: no-cache
+
+<> 2019-04-05T055623.400.json
+
+###
+
+POST http://127.0.0.1:8080/get_auth_token/?username=admin&password=pw1000000
+Accept: */*
+Cache-Control: no-cache
+
+<> 2019-04-05T055600.400.json
+
+###
+
+POST http://127.0.0.1:8080/get_auth_token?username=admin&password=pw1000000
+Accept: */*
+Cache-Control: no-cache
+
+<> 2019-04-05T055549.500.html
+
+###
+
+POST http://localhost:8080/get_auth_token?username=admin&password=pw1000000
+Accept: */*
+Cache-Control: no-cache
+
+###
+

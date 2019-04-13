@@ -5,7 +5,6 @@ from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from taggit.models import Tag
 
-from barcode_listener.models import DigitEyes_lookup, UPC_lookup, EAN_lookup
 from .models import Product, Stock, Log
 from .serializers import ProductSerializer
 
@@ -83,16 +82,17 @@ class ProductViewSet(viewsets.ModelViewSet):
         if Product.objects.filter(upcnumber=upcnumber).exists():
             return Product.objects.get(upcnumber=upcnumber)
         else:
-            for func in [UPC_lookup, EAN_lookup, DigitEyes_lookup]:
-                data = func(upcnumber)
-                if data:
-                    product = Product(**data)
-                    product.save()
-                    return product
-            #  not found, save a placeholder
-            product = Product(title='NA', upcnumber=upcnumber)
-            product.save()
-            return product
+            return Product().populate(upc=upcnumber)
+            # for func in [UPC_lookup, EAN_lookup, DigitEyes_lookup]:
+            #     data = func(upcnumber)
+            #     if data:
+            #         product = Product(**data)
+            #         product.save()
+            #         return product
+            # #  not found, save a placeholder
+            # product = Product(title='NA', upcnumber=upcnumber)
+            # product.save()
+            # return product
 
     def pop_stack(self):
         """ if there's anything on the stack get it, and delete it from the Log"""
