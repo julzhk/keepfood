@@ -1,12 +1,16 @@
 import os
+from unittest.mock import patch
 
 from django.contrib.auth.models import User
 from django.test import TestCase
 from rest_framework.test import APIClient
 
-from barcode_listener.models import generate_signature, DigitEyes_lookup, generate_digiteyes_url, UPC_lookup, EAN_lookup
+from barcode_listener.barcode_lookup import generate_digiteyes_url, generate_signature, DigitEyes_lookup, UPC_lookup, \
+    EAN_lookup
+from barcode_listener.mock_data import mock_digit_eyes_pastas
 from .models import Product, Stock
 
+Product.DoesNotExist
 
 class TestDigitEyesAPI(TestCase):
     def setUp(self):
@@ -51,9 +55,12 @@ class TestRealAPI(TestCase):
         self.client = APIClient()
         self.client.force_authenticate(user=self.adminuser)
 
+    @patch('barcode_listener.models.DigitEyes_lookup', mock_digit_eyes_pastas)
     def test_pasta(self):
         upc = '8000139910753'
         response = self.client.post(f'/api/product/{upc}/scan/', follow=True)
         self.assertEqual(Product.objects.count(), 1)
         self.assertEqual(Stock.objects.count(), 1)
         self.assertEqual(response.status_code, 200)
+        product = Product.objects.first()
+        self.assertTrue('Garofalo Casarecce Pasta' in product.description)
