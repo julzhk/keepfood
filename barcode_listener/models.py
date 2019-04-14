@@ -100,8 +100,9 @@ class Product(models.Model):
 
     @classmethod
     def populate(cls, upc):
-        product_data = open_food_facts_API(upc=upc).execute()
-        if not product_data:
+        try:
+            product_data = open_food_facts_API(upc=upc).execute()
+        except:
             product_data = cls.create_placeholder_product(upc)
         p = Product(**product_data)
         p.save()

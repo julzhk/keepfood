@@ -4,6 +4,10 @@ import pprint
 import requests
 
 
+class ProductNotFoundException(Exception):
+    pass
+
+
 class UPC_lookup(object):
     url = ''
 
@@ -38,6 +42,8 @@ class open_food_facts_API(UPC_lookup):
     url = 'https://world.openfoodfacts.org/api/v0/product/{upc}.json'
 
     def post_process(self, data):
+        if data.get('status', 'success') == 0:
+            raise ProductNotFoundException()
         product_data = {
             'title': data['product']['product_name'],
             'description': data['product']['product_name'],
