@@ -11,7 +11,7 @@ from barcode_listener.mock_data import mock_UPC_data
 from .models import Product, Stock, Log
 
 
-@patch('barcode_listener.views.UPC_lookup', mock_UPC_data)
+@patch('barcode_listener.barcode_lookup._UPC_lookup', mock_UPC_data)
 class TestAPI(TestCase):
     def setUp(self):
         self.adminuser = User.objects.create_superuser('admin', 'admin@test.com', 'pass')
@@ -19,7 +19,7 @@ class TestAPI(TestCase):
         self.client = APIClient()
         self.client.force_authenticate(user=self.adminuser)
 
-    @patch('barcode_listener.views.UPC_lookup', mock_UPC_data)
+    @patch('barcode_listener.barcode_lookup._UPC_lookup', mock_UPC_data)
     def test_scan_creates_one_product_and_two_stock_items(self):
         response = self.client.post('/api/product/3045320094084/scan/', follow=True)
         self.assertEqual(Product.objects.count(), 1)
@@ -29,7 +29,7 @@ class TestAPI(TestCase):
         self.assertEqual(Product.objects.count(), 1)
         self.assertEqual(Stock.objects.count(), 2)
 
-    @patch('barcode_listener.views.UPC_lookup', mock_UPC_data)
+    @patch('barcode_listener.barcode_lookup._UPC_lookup', mock_UPC_data)
     def test_new_product_scan_with_control_code_scan(self):
         """
         Scan a control char then a new product
@@ -50,7 +50,7 @@ class TestAPI(TestCase):
         stock_tags = Stock.objects.first().tags.all()
         self.assertEqual(stock_tags.count(), 1)
 
-    @patch('barcode_listener.views.UPC_lookup', mock_UPC_data)
+    @patch('barcode_listener.barcode_lookup._UPC_lookup', mock_UPC_data)
     def test_existing_product_scan_with_two_control_code_scans(self):
         """
         Scan a control char then a product
@@ -77,7 +77,7 @@ class TestAPI(TestCase):
         self.assertEqual(stock_tags.count(), 2)
 
 
-@patch('barcode_listener.views.UPC_lookup', mock_UPC_data)
+@patch('barcode_listener.barcode_lookup._UPC_lookup', mock_UPC_data)
 class TestControlCharacters(TestCase):
     def setUp(self):
         self.adminuser = User.objects.create_superuser('admin', 'admin@test.com', 'pass')
@@ -95,7 +95,7 @@ class TestControlCharacters(TestCase):
         self.delete_stock_tag.save()
         self.assertEqual(Tag.objects.count(), 4)
 
-    @patch('barcode_listener.views.UPC_lookup', mock_UPC_data)
+    @patch('barcode_listener.barcode_lookup._UPC_lookup', mock_UPC_data)
     def test_assign_shelf_life(self):
         response = self.client.post('/api/product/%s/scan/' % self.SIX_MONTH_LIFE, follow=True)
         response = self.client.post('/api/product/3045320094084/scan/', follow=True)
@@ -103,7 +103,7 @@ class TestControlCharacters(TestCase):
         date_use_by = timezone.now() + timedelta(days=30 * 6) - timedelta(days=1)
         self.assertTrue(stock.date_use_by > date_use_by)
 
-    @patch('barcode_listener.views.UPC_lookup', mock_UPC_data)
+    @patch('barcode_listener.barcode_lookup._UPC_lookup', mock_UPC_data)
     def test_reset_stack(self):
         response = self.client.post('/api/product/%s/scan/' % self.SIX_MONTH_LIFE, follow=True)
         response = self.client.post('/api/product/%s/scan/' % self.IS_A_CAN_UPC_CODE, follow=True)
@@ -112,7 +112,7 @@ class TestControlCharacters(TestCase):
         self.assertEqual(Stock.objects.count(), 0)
         self.assertEqual(Log.objects.count(), 0)
 
-    @patch('barcode_listener.views.UPC_lookup', mock_UPC_data)
+    @patch('barcode_listener.barcode_lookup._UPC_lookup', mock_UPC_data)
     def test_delete_stock(self):
         response = self.client.post('/api/product/%s/scan/' % self.delete_stock_tag.slug, follow=True)
         response = self.client.post('/api/product/3045320094084/scan/', follow=True)

@@ -7,7 +7,8 @@ from taggit.managers import TaggableManager
 from taggit.models import Tag
 from taggit.models import TaggedItemBase
 
-from barcode_listener.barcode_lookup import open_food_facts_API
+from barcode_listener.barcode_lookup import ProductNotFoundException
+from barcode_listener.barcode_lookup import open_food_facts_API, upc_database_API, EAN_lookup
 
 
 class CommonTags(object):
@@ -99,10 +100,30 @@ class Product(models.Model):
         return super(Product, self).save(*args, **kwargs)
 
     @classmethod
+    def get_or_create_product(cls, upcnumber):
+        """
+        :param upcnumber: str
+        :return: Product: object
+        """
+        if Product.objects.filter(upcnumber=upcnumber).exists():
+            print('found')
+            return Product.objects.get(upcnumber=upcnumber)
+        else:
+            print('not found')
+            return Product().populate(upc=upcnumber)
+
+    @classmethod
     def populate(cls, upc):
-        try:
-            product_data = open_food_facts_API(upc=upc).execute()
-        except:
+        product_data = None
+        for func in [open_food_facts_API, upc_database_API, EAN_lookup]:
+            try:
+                print('try ' + func.__name__)
+                product_data = func(upc=upc).execute()
+                break
+            except ProductNotFoundException:
+                print('not found')
+        if product_data is None:
+            print('not found anywhere - create placeholder')
             product_data = cls.create_placeholder_product(upc)
         p = Product(**product_data)
         p.save()

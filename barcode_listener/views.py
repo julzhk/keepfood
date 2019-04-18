@@ -31,7 +31,7 @@ class ProductViewSet(viewsets.ModelViewSet):
             self.process_control_characters(upcnumber=upcnumber)
         except ControlCodeException:
             return HttpResponse('control')
-        self.product = self.get_or_create_product(upcnumber)
+        self.product = Product().get_or_create_product(upcnumber)
         self.stock = self.create_stock_item()
         self.process_tags()
         return HttpResponse('ok')
@@ -77,22 +77,6 @@ class ProductViewSet(viewsets.ModelViewSet):
         # we have a character code, add to the stack
         Log(upcnumber=upcnumber).save()
 
-    def get_or_create_product(self, upcnumber):
-        """ todo move to model"""
-        if Product.objects.filter(upcnumber=upcnumber).exists():
-            return Product.objects.get(upcnumber=upcnumber)
-        else:
-            return Product().populate(upc=upcnumber)
-            # for func in [UPC_lookup, EAN_lookup, DigitEyes_lookup]:
-            #     data = func(upcnumber)
-            #     if data:
-            #         product = Product(**data)
-            #         product.save()
-            #         return product
-            # #  not found, save a placeholder
-            # product = Product(title='NA', upcnumber=upcnumber)
-            # product.save()
-            # return product
 
     def pop_stack(self):
         """ if there's anything on the stack get it, and delete it from the Log"""
