@@ -3,12 +3,13 @@ from datetime import timedelta
 from django.conf import settings
 from django.db import models
 from django.utils import timezone
+from flags.state import flag_enabled
 from taggit.managers import TaggableManager
 from taggit.models import Tag
 from taggit.models import TaggedItemBase
 
+from barcode_listener.barcode_lookup import Open_Food_Facts, UPC_Database, EAN_Data, EAN_Search
 from barcode_listener.barcode_lookup import ProductNotFoundException
-from barcode_listener.barcode_lookup import open_food_facts_API, upc_database_API, EAN_lookup
 
 
 class CommonTags(object):
@@ -80,6 +81,10 @@ class Product(models.Model):
     title = models.CharField(max_length=128, blank=True)
     description = models.CharField(max_length=128, blank=True)
     upcnumber = models.CharField(max_length=128, blank=True)
+    data_source = models.CharField(
+        default=settings.PLACEHOLDER_LABEL,
+        max_length=128,
+        blank=True)
 
     created_at = models.DateTimeField(blank=True)
     modified_at = models.DateTimeField(blank=True)
@@ -115,13 +120,24 @@ class Product(models.Model):
     @classmethod
     def populate(cls, upc):
         product_data = None
-        for func in [open_food_facts_API, upc_database_API, EAN_lookup]:
+        if flag_enabled('USE_LIMITED_API_CALLS'):
+            API_klass_list = [Open_Food_Facts, ]
+        else:
+            API_klass_list = [Open_Food_Facts,
+                              UPC_Database,
+                              EAN_Data,
+                              EAN_Search
+                              ]
+        for klass in API_klass_list:
             try:
-                print('try ' + func.__name__)
-                product_data = func(upc=upc).execute()
+                print('try ' + klass.__name__)
+                product_data = klass(upc=upc).execute()
                 break
             except ProductNotFoundException:
                 print('not found')
+            except Exception as err:
+                print(err)
+                # continue anyway
         if product_data is None:
             print('not found anywhere - create placeholder')
             product_data = cls.create_placeholder_product(upc)

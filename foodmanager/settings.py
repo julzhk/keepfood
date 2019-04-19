@@ -25,6 +25,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'barcode_listener',
     'taggit',
+    'flags',
     'django_extensions',
     'django.contrib.admin',
     'django.contrib.auth',
@@ -37,6 +38,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'flags.middleware.FlagConditionsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -100,7 +102,7 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
+PLACEHOLDER_LABEL = 'Placeholder'
 # Internationalization
 # https://docs.djangoproject.com/en/2.2/topics/i18n/
 
@@ -119,5 +121,14 @@ DEFAULT_DAYS_USE_BY = 4
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/2.2/howto/static-files/
 
+FLAGS = {
+    'USE_LIMITED_API_CALLS':
+        [
+            {'condition': 'boolean', 'value': False}
+        ]
+}
+
+
 STATIC_URL = '/static/'
 django_heroku.settings(locals())
+

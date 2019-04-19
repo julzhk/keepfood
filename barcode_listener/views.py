@@ -1,4 +1,5 @@
-from django.shortcuts import HttpResponse
+from django.conf import settings
+from django.shortcuts import HttpResponse, Http404
 from django.template.response import TemplateResponse
 from rest_framework import viewsets
 from rest_framework.decorators import action
@@ -34,6 +35,8 @@ class ProductViewSet(viewsets.ModelViewSet):
         self.product = Product().get_or_create_product(upcnumber)
         self.stock = self.create_stock_item()
         self.process_tags()
+        if self.product.data_source == settings.PLACEHOLDER_LABEL:
+            return Http404('not found')
         return HttpResponse('ok')
 
     def process_control_characters(self, upcnumber):

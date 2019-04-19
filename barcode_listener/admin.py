@@ -7,14 +7,15 @@ from .models import Product, Stock, Log
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
     list_display = (
-        'id',
         'title',
+        'id',
         'description',
         'upcnumber',
         'tag_list',
+        'data_source'
 
     )
-    list_filter = ('created_at', 'modified_at')
+    list_filter = ('data_source', 'created_at', 'modified_at')
     date_hierarchy = 'created_at'
 
     def get_queryset(self, request):
