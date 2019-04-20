@@ -1,40 +1,26 @@
-def digit_eyes():
-    return {'upc_code': '5000169132432', 'formattedNutrition': None,
-            'image': 'http://cyber-ean.uk/imageCache.php?name=Waitrose-Puttanesca-pasta-sauce', 'brand': 'Waitrose LTD',
-            'return_message': 'Success',
-            'gcp': {'country': 'GB', 'city': 'London', 'gln': '5000169', 'company': 'John Lewis Plc', 'contact': None,
-                    'address2': None, 'fax': None, 'state': None, 'address': '10 Clipstone', 'postal_code': 'W1A 3DF',
-                    'gcp': '5000169', 'phone': '448456100333'},
-            'nutrition': None,
-            'description': 'Waitrose Puttanesca Pasta Sauce',
-            'usage': '', 'uom': None, 'return_code': '000',
-            'product_web_page': 'http://cyber-ean.uk/product/Waitrose-Puttanesca-pasta-sauce-ean-05000169132432.html',
-            'language': 'en', 'ingredients': None,
-            'manufacturer': {'address': None, 'state': None, 'postal_code': None, 'phone': None, 'country': None,
-                             'city': None, 'contact': None, 'company': None, 'address2': None}, 'gcp_gcp': '5000169',
-            'website': 'cyber-ean.uk/'}
+MOCK_UPC_DATA = {'age': '',
+                 'alias': '',
+                 'brand': '',
+                 'category': '',
+                 'color': '',
+                 'description': 'MOCK PRODUCT',
+                 'error': False,
+                 'gender': '',
+                 'msrp': '0.00',
+                 'newupc': '3045320094084',
+                 'rate/down': '0',
+                 'rate/up': '0',
+                 'size': '',
+                 'st0s': '3045320094084',
+                 'status': 200,
+                 'title': 'MOCK Bonne Maman Rasberry Conserve',
+                 'type': '',
+                 'unit': '',
+                 'upcnumber': '3045320094084'}
 
 
-def mock_UPC_feed(upc='3045320094084'):
-    return {'age': '',
-            'alias': '',
-            'brand': '',
-            'category': '',
-            'color': '',
-            'description': '',
-            'error': False,
-            'gender': '',
-            'msrp': '0.00',
-            'newupc': '3045320094084',
-            'rate/down': '0',
-            'rate/up': '0',
-            'size': '',
-            'st0s': '3045320094084',
-            'status': 200,
-            'title': 'Bonne Maman Rasberry Conserve',
-            'type': '',
-            'unit': '',
-            'upcnumber': '3045320094084'}
+def mock_UPC_feed(*args, **kwargs):
+    return MOCK_UPC_DATA
 
 
 def mock_EAN_feed(upc='3045320094084'):
@@ -69,7 +55,7 @@ def mock_EAN_feed(upc='3045320094084'):
                                        'price_new_extra': 'USD',
                                        'price_new_extra_id': '537',
                                        'price_new_extra_long': 'US Dollars',
-                                       'product': 'Bonne Maman - Raspberry Conserve - '
+                                       'product': 'MOCK Bonne Maman - Raspberry Conserve - '
                                                   '370g',
                                        'weight': '13.1200',
                                        'weight_extra': 'oz',
@@ -93,4 +79,7 @@ def mock_EAN_feed(upc='3045320094084'):
 
 
 def mock_UPC_data(upc=None):
-    return {'upcnumber': '3045320094084', 'title': 'Bonne Maman Rasberry Conserve', 'description': ''}
+    return {
+        'data_source': 'Open_Food_Facts',
+        'upcnumber': '3045320094084',
+        'title': 'MOCK Bonne Maman Rasberry Conserve', 'description': ''}

@@ -6,6 +6,7 @@ from .models import Product, Stock, Log
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
+    search_fields = ['title', 'description']
     list_display = (
         'title',
         'id',

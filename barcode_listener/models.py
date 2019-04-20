@@ -122,6 +122,7 @@ class Product(models.Model):
         product_data = None
         if flag_enabled('USE_LIMITED_API_CALLS'):
             API_klass_list = [Open_Food_Facts, ]
+
         else:
             API_klass_list = [Open_Food_Facts,
                               UPC_Database,
@@ -130,7 +131,6 @@ class Product(models.Model):
                               ]
         for klass in API_klass_list:
             try:
-                print('try ' + klass.__name__)
                 product_data = klass(upc=upc).execute()
                 break
             except ProductNotFoundException:

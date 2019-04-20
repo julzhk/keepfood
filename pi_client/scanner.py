@@ -1,4 +1,5 @@
 #!/usr/bin/python
+import asyncio
 import json
 import logging
 import os
@@ -7,6 +8,11 @@ from time import sleep
 
 import requests
 import unicornhat as unicorn
+from UHScroll import unicorn_scroll
+
+UNICORN_HAT_BRIGHT = 255
+
+UNICORN_HAT_FAST_SCROLL = 0.075
 
 logging.basicConfig(filename="logs/scanner.log", level=logging.DEBUG)
 
@@ -78,8 +84,8 @@ def barcode_reader():
 
 
 def post_data_to_server(upcnumber):
-    response = requests.request(
-        'POST', KEEPFOOD_URL + upcnumber + '/scan/',
+    response = requests.post(
+        KEEPFOOD_URL % upcnumber,
         data=json.dumps({'upcnumber': upcnumber}),
         headers={
             'content-type': 'application/json',
@@ -87,9 +93,10 @@ def post_data_to_server(upcnumber):
         }
     )
     if response.status_code == 200:
-        show_twinke_confirmation(32, 255, 32)
+        show_twinkle_confirmation(32, 255, 32)
     else:
         show_colour_confirmation(255, 32, 32)
+    return response.content
 
 
 def show_colour_confirmation(r=160, g=64, b=128):
@@ -103,7 +110,7 @@ def show_colour_confirmation(r=160, g=64, b=128):
     unicorn.off()
 
 
-def show_twinke_confirmation(rx=255, gx=255, bx=255):
+def show_twinkle_confirmation(rx=255, gx=255, bx=255):
     width, height = unicorn.get_shape()
     for i in range(0, 300):
         x = randint(0, (width - 1))
@@ -116,17 +123,38 @@ def show_twinke_confirmation(rx=255, gx=255, bx=255):
     unicorn.off()
 
 
+# definition of a coroutine
+async def coroutine_scroller(upcnumber):
+    await asyncio.sleep(.4)
+    content = post_data_to_server(upcnumber)
+    print(content)
+    unicorn_scroll(str(content),
+                   'red',
+                   UNICORN_HAT_BRIGHT,
+                   UNICORN_HAT_FAST_SCROLL
+                   )
+
 
 if __name__ == '__main__':
     unicorn.set_layout(unicorn.AUTO)
     unicorn.rotation(0)
     unicorn.brightness(0.5)
-    show_colour_confirmation()
+
+    unicorn_scroll('Ready!',
+                   'blue',
+                   UNICORN_HAT_BRIGHT,
+                   UNICORN_HAT_FAST_SCROLL
+                   )
+    loop = asyncio.get_event_loop()
     try:
         while True:
             upcnumber = barcode_reader()
+            if upcnumber:
+                loop.run_until_complete(
+                    asyncio.gather(
+                        coroutine_scroller(upcnumber),
+                    ))
             logging.debug('scanned: ' + str(upcnumber))
-            post_data_to_server(upcnumber)
     except KeyboardInterrupt:
         logging.debug('Keyboard interrupt ')
         show_colour_confirmation(32, 32, 255)

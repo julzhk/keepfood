@@ -25,9 +25,9 @@ class _UPC_lookup(object):
         self.key = os.environ.get(self.key, f'No_{self.klass_name}_KEY')
         instance_vars = self.__dict__
         class_vars = self.__class__.__dict__
-        all_atributes = {**class_vars, **instance_vars}
+        all_attributes = {**class_vars, **instance_vars}
 
-        filtered_attributes = {k: str(v) for (k, v) in all_atributes.items() if not k[0] == '_'}
+        filtered_attributes = {k: str(v) for (k, v) in all_attributes.items() if not k[0] == '_'}
         url = self.url.format(**filtered_attributes)
         print(url)
         response = requests.get(url,
@@ -77,7 +77,7 @@ class UPC_Database(_UPC_lookup):
     url = 'https://api.upcdatabase.org/product/{upc}/{key}'
 
     def post_process(self, data):
-        if data.get('errror', False) == True:
+        if data.get('error', False) == True:
             raise ProductNotFoundException()
 
         product_data = {
@@ -95,6 +95,8 @@ class EAN_Data(_UPC_lookup):
 
     def post_process(self, data):
         title = data.get('product').get('attributes', {}).get('product', '-')
+        if title == '':
+            raise ProductNotFoundException()
         product_data = {
             'title': title,
             'description': '',
@@ -106,7 +108,7 @@ class EAN_Data(_UPC_lookup):
 
 
 class EAN_Search(_UPC_lookup):
-    url = "https://api.ean-search.org/api?token={key}&format=json&lang=1"
+    url = "https://api.ean-search.org/api?token={key}&op=barcode-lookup&ean={upc}&format=json&lang=1"
     key = 'EAN_SEARCH_KEY'
 
     def post_process(self, data):

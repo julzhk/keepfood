@@ -30,22 +30,25 @@ class ProductViewSet(viewsets.ModelViewSet):
         upcnumber = pk
         try:
             self.process_control_characters(upcnumber=upcnumber)
-        except ControlCodeException:
-            return HttpResponse('control')
+        except ControlCodeException as err:
+            return HttpResponse('control' + str(err),
+                                content_type="text/plain")
         self.product = Product().get_or_create_product(upcnumber)
         self.stock = self.create_stock_item()
         self.process_tags()
         if self.product.data_source == settings.PLACEHOLDER_LABEL:
             return Http404('not found')
-        return HttpResponse('ok')
+        return HttpResponse('ok', content_type="text/plain")
 
     def process_control_characters(self, upcnumber):
         """ if upc code is a control character, add to the stack and return with no further processing"""
         self.process_reset_stack_command(upcnumber)
-        all_tag_slugs = {tag['slug'] for tag in Tag.objects.all().values('slug')}
-        if upcnumber in all_tag_slugs:
+        try:
+            tag = Tag.objects.get(slug=upcnumber)
             self.create_log_item(upcnumber)
-            raise ControlCodeException()
+            raise ControlCodeException(tag.name)
+        except Tag.DoesNotExist:
+            pass
 
     def process_reset_stack_command(self, upcnumber):
         reset_stack_tag = Tag.objects.filter(name=RESET_STACK_TAG_NAME).first()
@@ -54,10 +57,11 @@ class ProductViewSet(viewsets.ModelViewSet):
             raise ControlCodeException()
 
     def process_tags(self):
+        """ Tags are pulled off the stack and associated code executed on this new STOCK object """
         tag = self.pop_stack()
         while tag:
             tag_name = tag.name
-            self.product.tags.add(tag_name)
+            # product tags not supported: self.product.tags.add(tag_name)
             self.stock.tags.add(tag_name)
             for stock_tag in self.stock.taggedstock_set.all():
                 self.execute_tag_methods(stock_tag, tag_name)
