@@ -163,6 +163,7 @@ class Product(models.Model):
 class Stock(models.Model):
     product = models.ForeignKey('Product', on_delete=models.CASCADE)
     date_use_by = models.DateTimeField(blank=True)
+    date_started = models.DateTimeField(blank=True)
     quantity_remaining = models.IntegerField(default=100)
     created_at = models.DateTimeField(blank=True)
     modified_at = models.DateTimeField(blank=True)
