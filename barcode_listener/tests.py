@@ -88,6 +88,8 @@ class TestControlCharacters(TestCase):
         self.client.force_authenticate(user=self.adminuser)
         self.IS_A_CAN_UPC_CODE = '000001'
         self.SIX_MONTH_LIFE = '000002'
+        self.START_STOCK_LIFE_TAG_NAME = 'stock_life_start'
+
         from .views import RESET_STACK_TAG_NAME, DELETE_TAG_NAME
         is_can_tag = Tag(name='is_can', slug=self.IS_A_CAN_UPC_CODE).save()
         six_month_tag = Tag(name='six_months_life', slug=self.SIX_MONTH_LIFE).save()
@@ -95,7 +97,9 @@ class TestControlCharacters(TestCase):
         self.reset_stack_tag.save()
         self.delete_stock_tag = Tag(name=DELETE_TAG_NAME, slug='000004')
         self.delete_stock_tag.save()
-        self.assertEqual(Tag.objects.count(), 4)
+        self.start_stock_life_tag = Tag(name=self.START_STOCK_LIFE_TAG_NAME, slug='000005')
+        self.start_stock_life_tag.save()
+        self.assertEqual(Tag.objects.count(), 5)
 
     def test_assign_shelf_life(self):
         response = self.client.post('/api/product/%s/scan/' % self.SIX_MONTH_LIFE, follow=True)
@@ -116,3 +120,11 @@ class TestControlCharacters(TestCase):
         response = self.client.post('/api/product/%s/scan/' % self.delete_stock_tag.slug, follow=True)
         response = self.client.post('/api/product/3045320094084/scan/', follow=True)
         self.assertEqual(Stock.objects.count(), 0)
+
+    def test_start_stock(self):
+        response = self.client.post('/api/product/%s/scan/' % self.start_stock_life_tag.slug, follow=True)
+        response = self.client.post('/api/product/3045320094084/scan/', follow=True)
+        self.assertEqual(Stock.objects.count(), 1)
+        stock = Stock.objects.first()
+        date_started = timezone.now()
+        self.assertEquals(stock.date_started.date(), date_started.date())

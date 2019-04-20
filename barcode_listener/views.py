@@ -39,7 +39,7 @@ class ProductViewSet(viewsets.ModelViewSet):
         self.process_tags()
         if self.product.data_source == settings.PLACEHOLDER_LABEL:
             return HttpResponseNotFound('not found')
-        return HttpResponse('ok' + self.product.title[:MAX_CHARS_POST_RESPONSE], content_type="text/plain")
+        return HttpResponse('CTRL:' + self.product.title[:MAX_CHARS_POST_RESPONSE], content_type="text/plain")
 
     def process_control_characters(self, upcnumber):
         """ if upc code is a control character, add to the stack and return with no further processing"""

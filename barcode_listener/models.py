@@ -72,8 +72,9 @@ class TaggedStock(TaggedItemBase, CommonTags):
     def remaining_0(self):
         return self.set_remaining_quantity(qty_percent=0)
 
-    def is_can(self):
-        print('is a can')
+    def stock_life_start(self):
+        self.content_object.date_started = timezone.now()
+        self.content_object.save()
 
     def delete_stock(self):
         # delete all stock items with supplied UPC
@@ -163,7 +164,7 @@ class Product(models.Model):
 class Stock(models.Model):
     product = models.ForeignKey('Product', on_delete=models.CASCADE)
     date_use_by = models.DateTimeField(blank=True)
-    date_started = models.DateTimeField(blank=True)
+    date_started = models.DateTimeField(blank=True, null=True)
     quantity_remaining = models.IntegerField(default=100)
     created_at = models.DateTimeField(blank=True)
     modified_at = models.DateTimeField(blank=True)
