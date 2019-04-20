@@ -8,7 +8,7 @@ from taggit.managers import TaggableManager
 from taggit.models import Tag
 from taggit.models import TaggedItemBase
 
-from barcode_listener.barcode_lookup import Open_Food_Facts, UPC_Database, EAN_Data, EAN_Search
+from barcode_listener.barcode_lookup import Open_Food_Facts, UPC_Database, EAN_Data, EAN_Search, Mock_API
 from barcode_listener.barcode_lookup import ProductNotFoundException
 
 
@@ -72,6 +72,9 @@ class TaggedStock(TaggedItemBase, CommonTags):
     def remaining_0(self):
         return self.set_remaining_quantity(qty_percent=0)
 
+    def is_can(self):
+        print('is a can')
+
     def delete_stock(self):
         # delete all stock items with supplied UPC
         product = self.content_object.product
@@ -129,6 +132,9 @@ class Product(models.Model):
                               EAN_Data,
                               EAN_Search
                               ]
+        if settings.MOCK_API_CALLS:
+            API_klass_list = [Mock_API, ]
+
         for klass in API_klass_list:
             try:
                 product_data = klass(upc=upc).execute()

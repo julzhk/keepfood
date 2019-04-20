@@ -10,6 +10,8 @@ import requests
 import unicornhat as unicorn
 from UHScroll import unicorn_scroll
 
+MAX_CHARS_POST_RESPONSE = 50
+
 UNICORN_HAT_BRIGHT = 255
 
 UNICORN_HAT_FAST_SCROLL = 0.075
@@ -96,7 +98,7 @@ def post_data_to_server(upcnumber):
         show_twinkle_confirmation(32, 255, 32)
     else:
         show_colour_confirmation(255, 32, 32)
-    return response.content
+    return response.content.decode('utf-8')[:MAX_CHARS_POST_RESPONSE]
 
 
 def show_colour_confirmation(r=160, g=64, b=128):

@@ -3,6 +3,8 @@ import pprint
 
 import requests
 
+from barcode_listener.mock_data import mock_UPC_data
+
 
 class ProductNotFoundException(Exception):
     pass
@@ -122,3 +124,8 @@ class EAN_Search(_UPC_lookup):
             'data_source': self.klass_name
         }
         return product_data
+
+
+class Mock_API(_UPC_lookup):
+    def do_json_request(self):
+        return mock_UPC_data()

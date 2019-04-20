@@ -127,7 +127,7 @@ FLAGS = {
             {'condition': 'boolean', 'value': False}
         ]
 }
-
+MOCK_API_CALLS = False
 
 STATIC_URL = '/static/'
 django_heroku.settings(locals())

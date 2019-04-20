@@ -1,5 +1,6 @@
 from django.conf import settings
-from django.shortcuts import HttpResponse, Http404
+from django.http.response import HttpResponseNotFound
+from django.shortcuts import HttpResponse
 from django.template.response import TemplateResponse
 from rest_framework import viewsets
 from rest_framework.decorators import action
@@ -11,7 +12,7 @@ from .serializers import ProductSerializer
 
 RESET_STACK_TAG_NAME = 'reset_stack'
 DELETE_TAG_NAME = 'delete_stock'
-
+MAX_CHARS_POST_RESPONSE = 50
 
 class ControlCodeException(Exception):
     pass
@@ -31,14 +32,14 @@ class ProductViewSet(viewsets.ModelViewSet):
         try:
             self.process_control_characters(upcnumber=upcnumber)
         except ControlCodeException as err:
-            return HttpResponse('control' + str(err),
+            return HttpResponse('control' + str(err)[:MAX_CHARS_POST_RESPONSE],
                                 content_type="text/plain")
         self.product = Product().get_or_create_product(upcnumber)
         self.stock = self.create_stock_item()
         self.process_tags()
         if self.product.data_source == settings.PLACEHOLDER_LABEL:
-            return Http404('not found')
-        return HttpResponse('ok', content_type="text/plain")
+            return HttpResponseNotFound('not found')
+        return HttpResponse('ok' + self.product.title[:MAX_CHARS_POST_RESPONSE], content_type="text/plain")
 
     def process_control_characters(self, upcnumber):
         """ if upc code is a control character, add to the stack and return with no further processing"""
@@ -63,11 +64,12 @@ class ProductViewSet(viewsets.ModelViewSet):
             tag_name = tag.name
             # product tags not supported: self.product.tags.add(tag_name)
             self.stock.tags.add(tag_name)
-            for stock_tag in self.stock.taggedstock_set.all():
-                self.execute_tag_methods(stock_tag, tag_name)
             tag = self.pop_stack()
+        for stock_tag in self.stock.taggedstock_set.all():
+            self.execute_tag_methods(stock_tag)
 
-    def execute_tag_methods(self, stock_tag, tag_name):
+    def execute_tag_methods(self, stock_tag):
+        tag_name = stock_tag.tag.name
         try:
             func = getattr(stock_tag, tag_name)
             r = func()

@@ -1,14 +1,16 @@
 from datetime import timedelta
 
 from django.contrib.auth.models import User
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.utils import timezone
 from rest_framework.test import APIClient
 from taggit.models import Tag
 
+from barcode_listener.mock_data import mock_UPC_data
 from .models import Product, Stock, Log
 
 
+@override_settings(MOCK_API_CALLS=True)
 class TestAPI(TestCase):
 
     def setUp(self):
@@ -77,6 +79,7 @@ class TestAPI(TestCase):
         self.assertEqual(stock_tags.count(), 2)
 
 
+@override_settings(MOCK_API_CALLS=True)
 class TestControlCharacters(TestCase):
     def setUp(self):
         self.adminuser = User.objects.create_superuser('admin', 'admin@test.com', 'pass')
