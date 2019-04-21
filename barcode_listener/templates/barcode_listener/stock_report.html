@@ -1,0 +1,24 @@
+{% extends 'base/base.html' %}
+{% block 'body' %}
+    Stock report
+    <table class="ui celled table">
+        <thead>
+        <tr>
+            <th>Name</th>
+            <th>Age (days)</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for item in stock %}
+            <tr>
+                <td data-label="Name">
+                    {{ item }}
+                </td>
+                <td data-label="Name">
+                    {{ item.started_age }}
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

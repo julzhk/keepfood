@@ -123,8 +123,19 @@ class TestControlCharacters(TestCase):
 
     def test_start_stock(self):
         response = self.client.post('/api/product/%s/scan/' % self.start_stock_life_tag.slug, follow=True)
+        self.assertEqual(Log.objects.count(), 1)
         response = self.client.post('/api/product/3045320094084/scan/', follow=True)
         self.assertEqual(Stock.objects.count(), 1)
+        self.assertEqual(Log.objects.count(), 0)
         stock = Stock.objects.first()
         date_started = timezone.now()
         self.assertEquals(stock.date_started.date(), date_started.date())
+
+    def test_start_stock_age_calc(self):
+        response = self.client.post('/api/product/%s/scan/' % self.start_stock_life_tag.slug, follow=True)
+        response = self.client.post('/api/product/3045320094084/scan/', follow=True)
+        self.assertEqual(Stock.objects.count(), 1)
+        stock = Stock.objects.first()
+        stock.date_started = timezone.now() - timedelta(days=10)
+        stock.save()
+        self.assertEquals(stock.started_age, 10)

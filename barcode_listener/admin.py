@@ -28,10 +28,11 @@ class ProductAdmin(admin.ModelAdmin):
 @admin.register(Stock)
 class StockAdmin(admin.ModelAdmin):
     list_display = (
-        'id',
         'product',
+        'id',
         'date_use_by',
         'quantity_remaining',
+        'started_age',
         'tag_list',
         'created_at',
     )

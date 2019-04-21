@@ -96,7 +96,11 @@ class ProductViewSet(viewsets.ModelViewSet):
             return tag
 
 
-def listener(request):
-    """ home page : shows tag control codes"""
-
+def tag_list(request):
+    """ shows tag control codes"""
     return TemplateResponse(request, 'barcode_listener/control_codes.html', {'tags': Tag.objects.all()})
+
+
+def stock_report(request):
+    """ shows tag control codes"""
+    return TemplateResponse(request, 'barcode_listener/stock_report.html', {'stock': Stock.objects.all()})

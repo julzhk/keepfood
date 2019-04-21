@@ -5,7 +5,7 @@ from rest_framework import routers
 from rest_framework.authtoken import views as rest_framework_auth_views
 
 from barcode_listener import views
-from barcode_listener.views import listener
+from barcode_listener.views import tag_list, stock_report
 
 router = routers.DefaultRouter()
 router.register(r'product', views.ProductViewSet)
@@ -16,8 +16,8 @@ urlpatterns = [
     url(r'^get_auth_token/$', rest_framework_auth_views.obtain_auth_token, name='get_auth_token'),
 
     path('admin/', admin.site.urls),
-    path('boom', listener, name='listener'),
-    path('', listener, name='home'),
+    path('tags', tag_list, name='tag_list'),
+    path('', stock_report, name='home'),
 ]
 
 # when POST’ing to http://<YOUR SITE>/get_auth_token/ with the following data

@@ -178,6 +178,10 @@ class Stock(models.Model):
     def __str__(self):
         return f'{self.product.upcnumber}: {self.product.title}{self.product.description} {self.quantity_remaining}%'
 
+    @property
+    def started_age(self):
+        return (timezone.now() - self.date_started).days
+
     def save(self, *args, **kwargs):
         """ auto date stamp """
         self.modified_at = timezone.now()
