@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from django.contrib import admin
 
-from .models import Product, Stock, Log
+from .models import Product, Stock, ControlStack
 
 
 @admin.register(Product)
@@ -45,7 +45,7 @@ class StockAdmin(admin.ModelAdmin):
         return u", ".join(o.name for o in obj.tags.all())
 
 
-@admin.register(Log)
-class LogAdmin(admin.ModelAdmin):
+@admin.register(ControlStack)
+class ControlStackAdmin(admin.ModelAdmin):
     list_display = ('id', 'upcnumber', 'created_at')
     date_hierarchy = 'created_at'

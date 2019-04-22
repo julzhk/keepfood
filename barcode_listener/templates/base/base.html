@@ -122,14 +122,14 @@
     </div>
 </div>
 <div class="ui padded grid">
-    <div
-            class="three wide tablet only three wide computer only column"
-            id="sidebar"
-    >
+    {{ request.resolver_match.url_name }}
+    <div class="three wide tablet only three wide computer only column"
+         id="sidebar">
         <div class="ui vertical borderless fluid text menu">
-            <a class=" item" href="{% url 'home' %}">Home</a>
-
-            <a class="item" href="{% url 'tag_list' %}">Tags</a>
+            <a class=" item {% if request.resolver_match.url_name == 'home' %}active{% endif %}"
+               href="{% url 'home' %}">Home</a>
+            <a class="item {% if request.resolver_match.url_name == 'tag_list' %}active{% endif %}"
+               href="{% url 'tag_list' %}">Tags</a>
             {#            <a class="item">Reports</a>#}
             {#          <a class="item">Analytics</a> <a class="item">Export</a>#}
             {#          <div class="ui hidden divider"></div>#}

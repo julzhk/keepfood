@@ -7,7 +7,7 @@ from rest_framework.test import APIClient
 from taggit.models import Tag
 
 from barcode_listener.mock_data import mock_UPC_data
-from .models import Product, Stock, Log
+from .models import Product, Stock, ControlStack
 
 
 @override_settings(MOCK_API_CALLS=True)
@@ -40,9 +40,9 @@ class TestAPI(TestCase):
         self.assertEqual(Tag.objects.count(), 1)
 
         response = self.client.post('/api/product/%s/scan/' % IS_A_CAN_UPC_CODE, follow=True)
-        self.assertEqual(Log.objects.count(), 1)
+        self.assertEqual(ControlStack.objects.count(), 1)
         response = self.client.post('/api/product/3045320094084/scan/', follow=True)
-        self.assertEqual(Log.objects.count(), 0)
+        self.assertEqual(ControlStack.objects.count(), 0)
         self.assertEqual(Product.objects.count(), 1)
         self.assertEqual(Stock.objects.count(), 1)
         product_tags = Product.objects.first().tags.all()
@@ -66,10 +66,10 @@ class TestAPI(TestCase):
 
         self.client.post('/api/product/%s/scan/' % IS_A_CAN_UPC_CODE, follow=True)
         self.client.post('/api/product/%s/scan/' % SIX_MONTH_LIFE, follow=True)
-        self.assertEqual(Log.objects.count(), 2)
+        self.assertEqual(ControlStack.objects.count(), 2)
 
         response = self.client.post('/api/product/3045320094084/scan/', follow=True)
-        self.assertEqual(Log.objects.count(), 0)
+        self.assertEqual(ControlStack.objects.count(), 0)
         self.assertEqual(Product.objects.count(), 1)
         self.assertEqual(Stock.objects.count(), 1)
         product_tags = Product.objects.first().tags.all()
@@ -111,10 +111,10 @@ class TestControlCharacters(TestCase):
     def test_reset_stack(self):
         response = self.client.post('/api/product/%s/scan/' % self.SIX_MONTH_LIFE, follow=True)
         response = self.client.post('/api/product/%s/scan/' % self.IS_A_CAN_UPC_CODE, follow=True)
-        self.assertEqual(Log.objects.count(), 2)
+        self.assertEqual(ControlStack.objects.count(), 2)
         response = self.client.post('/api/product/%s/scan/' % self.reset_stack_tag.slug, follow=True)
         self.assertEqual(Stock.objects.count(), 0)
-        self.assertEqual(Log.objects.count(), 0)
+        self.assertEqual(ControlStack.objects.count(), 0)
 
     def test_delete_stock(self):
         response = self.client.post('/api/product/%s/scan/' % self.delete_stock_tag.slug, follow=True)
@@ -123,10 +123,10 @@ class TestControlCharacters(TestCase):
 
     def test_start_stock(self):
         response = self.client.post('/api/product/%s/scan/' % self.start_stock_life_tag.slug, follow=True)
-        self.assertEqual(Log.objects.count(), 1)
+        self.assertEqual(ControlStack.objects.count(), 1)
         response = self.client.post('/api/product/3045320094084/scan/', follow=True)
         self.assertEqual(Stock.objects.count(), 1)
-        self.assertEqual(Log.objects.count(), 0)
+        self.assertEqual(ControlStack.objects.count(), 0)
         stock = Stock.objects.first()
         date_started = timezone.now()
         self.assertEquals(stock.date_started.date(), date_started.date())

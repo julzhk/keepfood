@@ -180,7 +180,10 @@ class Stock(models.Model):
 
     @property
     def started_age(self):
-        return (timezone.now() - self.date_started).days
+        try:
+            return (timezone.now() - self.date_started).days
+        except TypeError:
+            return 0
 
     def save(self, *args, **kwargs):
         """ auto date stamp """
@@ -192,7 +195,7 @@ class Stock(models.Model):
         return super(Stock, self).save(*args, **kwargs)
 
 
-class Log(models.Model):
+class ControlStack(models.Model):
     upcnumber = models.CharField(max_length=32, blank=True)
     created_at = models.DateTimeField(blank=True)
 
@@ -200,9 +203,8 @@ class Log(models.Model):
         """ auto date stamp """
         if not self.id:
             self.created_at = timezone.now()
-        return super(Log, self).save(*args, **kwargs)
+        return super(ControlStack, self).save(*args, **kwargs)
 
     class Meta:
         ordering = ['pk', ]
-        verbose_name_plural = 'Log'
-
+        verbose_name_plural = 'ControlStack'
