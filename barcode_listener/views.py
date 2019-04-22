@@ -7,7 +7,7 @@ from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from taggit.models import Tag
 
-from .models import Product, Stock, Log
+from .models import Product, Stock, ControlStack
 from .serializers import ProductSerializer
 
 RESET_STACK_TAG_NAME = 'reset_stack'
@@ -46,7 +46,7 @@ class ProductViewSet(viewsets.ModelViewSet):
         self.process_reset_stack_command(upcnumber)
         try:
             tag = Tag.objects.get(slug=upcnumber)
-            self.create_log_item(upcnumber)
+            self.create_ControlStack_item(upcnumber)
             raise ControlCodeException(tag.name)
         except Tag.DoesNotExist:
             pass
@@ -54,7 +54,7 @@ class ProductViewSet(viewsets.ModelViewSet):
     def process_reset_stack_command(self, upcnumber):
         reset_stack_tag = Tag.objects.filter(name=RESET_STACK_TAG_NAME).first()
         if reset_stack_tag and upcnumber == reset_stack_tag.slug:
-            Log.objects.all().delete()
+            ControlStack.objects.all().delete()
             raise ControlCodeException()
 
     def process_tags(self):
@@ -82,17 +82,17 @@ class ProductViewSet(viewsets.ModelViewSet):
         stock.save()
         return stock
 
-    def create_log_item(self, upcnumber):
+    def create_ControlStack_item(self, upcnumber):
         # we have a character code, add to the stack
-        Log(upcnumber=upcnumber).save()
+        ControlStack(upcnumber=upcnumber).save()
 
 
     def pop_stack(self):
-        """ if there's anything on the stack get it, and delete it from the Log"""
-        if Log.objects.count():
-            log = Log.objects.last()
-            tag = Tag.objects.get(slug=log.upcnumber)
-            log.delete()
+        """ if there's anything on the stack get it, and delete it from the ControlStack"""
+        if ControlStack.objects.purge_stale().count():
+            stackitem = ControlStack.objects.last()
+            tag = Tag.objects.get(slug=stackitem.upcnumber)
+            stackitem.delete()
             return tag
 
 
