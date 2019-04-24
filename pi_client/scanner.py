@@ -1,5 +1,4 @@
 #!/usr/bin/python
-import asyncio
 import json
 import logging
 import os
@@ -16,7 +15,13 @@ UNICORN_HAT_BRIGHT = 255
 
 UNICORN_HAT_FAST_SCROLL = 0.075
 
-logging.basicConfig(filename="logs/scanner.log", level=logging.DEBUG)
+logging.basicConfig(
+    filename="logs/scanner.log",
+    level=logging.DEBUG,
+    format='%(asctime)s.%(msecs)03d %(levelname)s %(module)s - %(funcName)s: %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S',
+)
+
 
 KEEPFOOD_KEY = os.environ.get('KEEPFOOD_KEY', '??')
 KEEPFOOD_URL = os.environ.get('KEEPFOOD_URL', '??')
@@ -58,9 +63,8 @@ CHARMAP_UPPERCASE = {4: 'A', 5: 'B', 6: 'C', 7: 'D', 8: 'E', 9: 'F', 10: 'G', 11
 CR_CHAR = 40
 SHIFT_CHAR = 2
 
-if KEEPFOOD_URL == '??':
-    print('Env vars not set? or start with sudo -E scanner.py')
-    exit()
+assert (KEEPFOOD_URL != '??'), 'KEEPFOOD_URL Env vars not set? or start with sudo -E scanner.py'
+assert (KEEPFOOD_KEY != '??'), 'KEEPFOOD_KEY Env vars not set? or start with sudo -E scanner.py'
 
 def barcode_reader():
     barcode_string_output = ''
@@ -86,17 +90,23 @@ def barcode_reader():
 
 
 def post_data_to_server(upcnumber):
+    logging.debug('post data to serverexit')
+    post_url = KEEPFOOD_URL % upcnumber
+    logging.debug('post to ' + post_url)
     response = requests.post(
-        KEEPFOOD_URL % upcnumber,
+        post_url,
         data=json.dumps({'upcnumber': upcnumber}),
         headers={
             'content-type': 'application/json',
             'Authorization': 'Token %s' % KEEPFOOD_KEY
         }
     )
-    if response.status_code == 200:
+    status_code = response.status_code
+    logging.debug('response code ' + str(status_code))
+    if status_code == 200:
         show_twinkle_confirmation(32, 255, 32)
     else:
+        unicorn_message(str(status_code))
         show_colour_confirmation(255, 32, 32)
     return response.content.decode('utf-8')[:MAX_CHARS_POST_RESPONSE]
 
@@ -125,13 +135,9 @@ def show_twinkle_confirmation(rx=255, gx=255, bx=255):
     unicorn.off()
 
 
-# definition of a coroutine
-async def coroutine_scroller(upcnumber):
-    await asyncio.sleep(.4)
-    content = post_data_to_server(upcnumber)
-    print(content)
+def unicorn_message(content, colour='red'):
     unicorn_scroll(str(content),
-                   'red',
+                   colour,
                    UNICORN_HAT_BRIGHT,
                    UNICORN_HAT_FAST_SCROLL
                    )
@@ -141,24 +147,15 @@ if __name__ == '__main__':
     unicorn.set_layout(unicorn.AUTO)
     unicorn.rotation(0)
     unicorn.brightness(0.5)
-
-    unicorn_scroll('Ready!',
-                   'blue',
-                   UNICORN_HAT_BRIGHT,
-                   UNICORN_HAT_FAST_SCROLL
-                   )
-    loop = asyncio.get_event_loop()
+    unicorn_message('Ready!', 'blue')
     try:
         while True:
             upcnumber = barcode_reader()
-            if upcnumber:
-                loop.run_until_complete(
-                    asyncio.gather(
-                        coroutine_scroller(upcnumber),
-                    ))
             logging.debug('scanned: ' + str(upcnumber))
+            post_data_to_server(upcnumber)
     except KeyboardInterrupt:
         logging.debug('Keyboard interrupt ')
+        unicorn_message('bye')
         show_colour_confirmation(32, 32, 255)
     except Exception as err:
         print(err)
