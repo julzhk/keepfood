@@ -130,6 +130,12 @@
                href="{% url 'home' %}">Home</a>
             <a class="item {% if request.resolver_match.url_name == 'tag_list' %}active{% endif %}"
                href="{% url 'tag_list' %}">Tags</a>
+            <a class="item {% if request.resolver_match.url_name == 'old_stock' %}active{% endif %}"
+               href="{% url 'old_stock' %}">Old Stock</a>
+            <a class="item {% if request.resolver_match.url_name == 'new_stock' %}active{% endif %}"
+               href="{% url 'new_stock' %}">New Stock</a>
+            <a class="item {% if request.resolver_match.url_name == 'empty_stock' %}active{% endif %}"
+               href="{% url 'empty_stock' %}">Empty Stock</a>
             {#            <a class="item">Reports</a>#}
             {#          <a class="item">Analytics</a> <a class="item">Export</a>#}
             {#          <div class="ui hidden divider"></div>#}

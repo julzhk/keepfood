@@ -1,12 +1,12 @@
 #!/usr/bin/python
 import json
 import logging
-import os
 from random import randint
 from time import sleep
 
 import requests
 import unicornhat as unicorn
+
 from UHScroll import unicorn_scroll
 
 MAX_CHARS_POST_RESPONSE = 50
@@ -16,17 +16,21 @@ UNICORN_HAT_BRIGHT = 255
 UNICORN_HAT_FAST_SCROLL = 0.075
 
 logging.basicConfig(
-    filename="logs/scanner.log",
-    level=logging.DEBUG,
-    format='%(asctime)s.%(msecs)03d %(levelname)s %(module)s - %(funcName)s: %(message)s',
+    level=logging.INFO,
+    format='%(asctime)s.%(msecs)03d %(levelname)s (%(threadName)-10s) - %(funcName)s: %(message)s',
     datefmt='%Y-%m-%d %H:%M:%S',
-)
+    handlers=[
+        logging.FileHandler("{0}/{1}.log".format('logs', 'scanner')),
+        logging.StreamHandler()
+    ])
 
+# KEEPFOOD_KEY = os.environ.get('KEEPFOOD_KEY', '??')
+# KEEPFOOD_URL = os.environ.get('KEEPFOOD_URL', '??')
 
-KEEPFOOD_KEY = os.environ.get('KEEPFOOD_KEY', '??')
-KEEPFOOD_URL = os.environ.get('KEEPFOOD_URL', '??')
-# something like KEEPFOOD_URL=https://<URL>/api/product/%s/scan
-logging.debug('start with ' + KEEPFOOD_URL)
+# something like KEEPFOOD_URL=https://<URL>/api/product/%s/scan/
+KEEPFOOD_URL = 'https://keepfood.pagekite.me/api/product/%s/scan/'
+KEEPFOOD_KEY = '9268ae6c5f37d4e7bd67ab0685478737d7b9e9f7'
+logging.info('start with ' + KEEPFOOD_URL)
 UPC_LOOKUP_ERROR = 'upc number error'
 
 """
@@ -136,6 +140,7 @@ def show_twinkle_confirmation(rx=255, gx=255, bx=255):
 
 
 def unicorn_message(content, colour='red'):
+    logging.info(content)
     unicorn_scroll(str(content),
                    colour,
                    UNICORN_HAT_BRIGHT,
@@ -143,21 +148,24 @@ def unicorn_message(content, colour='red'):
                    )
 
 
-if __name__ == '__main__':
+def unicorn_init():
     unicorn.set_layout(unicorn.AUTO)
     unicorn.rotation(0)
     unicorn.brightness(0.5)
+
+
+if __name__ == '__main__':
+    unicorn_init()
     unicorn_message('Ready!', 'blue')
     try:
         while True:
             upcnumber = barcode_reader()
-            logging.debug('scanned: ' + str(upcnumber))
+            logging.info('scanned: ' + str(upcnumber))
             post_data_to_server(upcnumber)
     except KeyboardInterrupt:
-        logging.debug('Keyboard interrupt ')
+        logging.debug('Keyboard interrupt')
         unicorn_message('bye')
         show_colour_confirmation(32, 32, 255)
     except Exception as err:
-        print(err)
-        logging.debug('Main exit exception: ' + str(err))
+        logging.error(err)
         show_colour_confirmation(32, 32, 255)

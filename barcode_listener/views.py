@@ -1,7 +1,10 @@
+from datetime import timedelta
+
 from django.conf import settings
 from django.http.response import HttpResponseNotFound
 from django.shortcuts import HttpResponse
 from django.template.response import TemplateResponse
+from django.utils import timezone
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
@@ -103,4 +106,41 @@ def tag_list(request):
 
 def stock_report(request):
     """ shows tag control codes"""
-    return TemplateResponse(request, 'barcode_listener/stock_report.html', {'stock': Stock.objects.all()})
+    return TemplateResponse(request,
+                            'barcode_listener/stock_report.html',
+                            {
+                                'stock': Stock.objects.all(),
+                                'header': 'All Stock Items'
+                            })
+
+
+def old_stock_report(request):
+    """ shows tag control codes"""
+    return TemplateResponse(request,
+                            'barcode_listener/stock_report.html',
+                            {
+                                'stock': Stock.objects.filter(date_started__lte=timezone.now() - timedelta(days=5)),
+                                'header': 'Getting old: Stock Items'
+                            })
+
+
+def new_stock_report(request):
+    """ shows tag control codes"""
+    return TemplateResponse(request,
+                            'barcode_listener/stock_report.html',
+                            {
+                                'stock': Stock.objects.filter(date_started=None) | Stock.objects.filter(
+                                    date_started__gte=timezone.now() - timedelta(days=2)),
+                                'header': 'New Stock Items'
+                            })
+
+
+def empty_stock_report(request):
+    """ shows tag control codes"""
+    return TemplateResponse(request,
+                            'barcode_listener/stock_report.html',
+                            {
+                                'stock': Stock.objects.filter(tags__name='remaining_0'),
+
+                                'header': 'Run out Stock Items'
+                            })
