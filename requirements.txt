@@ -13,7 +13,7 @@ django-filter==2.1.0
 django-flags==4.1.2
 django-heroku==0.3.1
 django-taggit==1.1.0
-djangorestframework==3.9.2
+djangorestframework==3.11.2
 djangorestframework-stubs==0.4.2
 entrypoints==0.3
 funcy==1.11
